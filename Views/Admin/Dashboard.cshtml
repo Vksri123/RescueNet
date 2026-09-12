@@ -1,0 +1,706 @@
+@model AdminDashboardViewModel
+@{
+    ViewData["Title"] = "Disaster Operations Room";
+    var recentSMS = ViewBag.RecentSMSAlerts as List<SMSAlert> ?? new List<SMSAlert>();
+    var smsConfig = ViewBag.SMSGatewayConfig as SMSGatewayConfig ?? new SMSGatewayConfig();
+}
+
+<!-- Admin Header Bar -->
+<div class="row fade-in mb-3 align-items-center">
+    <div class="col-md-8">
+        <h2 class="h3 text-white mb-0"><i class="fa-solid fa-tower-observation text-danger me-2"></i> Command Center Operations</h2>
+    </div>
+    <div class="col-md-4 text-md-end">
+        <a asp-controller="Admin" asp-action="CompletedRequests" class="btn btn-outline-success btn-sm">
+            <i class="fa-solid fa-box-archive me-1"></i> View Resolved Requests Archive
+        </a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success bg-success bg-opacity-15 border-success text-white mb-4 fade-in">
+        <i class="fa-solid fa-circle-check me-2"></i> @TempData["Success"]
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger bg-danger bg-opacity-15 border-danger text-white mb-4 fade-in">
+        <i class="fa-solid fa-triangle-exclamation me-2"></i> @TempData["Error"]
+    </div>
+}
+
+<!-- KPI Cards Section -->
+<div class="row g-3 mb-4 fade-in">
+    <div class="col-md-3 col-sm-6">
+        <div class="metric-box bg-dark bg-opacity-40 text-white">
+            <div>
+                <span class="text-muted d-block fs-8 text-uppercase">Active Events</span>
+                <span class="metric-number" id="kpiActive">@Model.TotalActiveEmergencies</span>
+            </div>
+            <div class="metric-icon text-white-50"><i class="fa-solid fa-satellite-dish"></i></div>
+        </div>
+    </div>
+    
+    <div class="col-md-2 col-sm-6">
+        <div class="metric-box metric-box-critical">
+            <div>
+                <span class="text-danger d-block fs-8 text-uppercase">🔴 Critical</span>
+                <span class="metric-number text-danger" id="kpiCritical">@Model.CriticalCount</span>
+            </div>
+            <div class="metric-icon text-danger opacity-50"><i class="fa-solid fa-triangle-exclamation"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+        <div class="metric-box metric-box-high">
+            <div>
+                <span class="text-warning d-block fs-8 text-uppercase">🟠 High</span>
+                <span class="metric-number text-warning" id="kpiHigh">@Model.HighCount</span>
+            </div>
+            <div class="metric-icon text-warning opacity-50"><i class="fa-solid fa-fire"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-2 col-sm-6">
+        <div class="metric-box metric-box-medium">
+            <div>
+                <span class="text-warning d-block fs-8 text-uppercase" style="color: var(--accent-yellow) !important;">🟡 Medium</span>
+                <span class="metric-number" style="color: var(--accent-yellow)" id="kpiMedium">@Model.MediumCount</span>
+            </div>
+            <div class="metric-icon opacity-50" style="color: var(--accent-yellow)"><i class="fa-solid fa-circle-exclamation"></i></div>
+        </div>
+    </div>
+
+    <div class="col-md-3 col-sm-6">
+        <div class="metric-box metric-box-low">
+            <div>
+                <span class="text-success d-block fs-8 text-uppercase">🟢 Low / Resolved</span>
+                <span class="metric-number text-success" id="kpiLow">@Model.LowCount</span>
+            </div>
+            <div class="metric-icon text-success opacity-50"><i class="fa-solid fa-circle-check"></i></div>
+        </div>
+    </div>
+</div>
+
+<!-- Map & Analytics Section -->
+<div class="row g-4 mb-4 fade-in">
+    <!-- Live Map Grid -->
+    <div class="col-lg-8">
+        <div class="glass-card h-100 card-body-clean d-flex flex-column">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 text-white mb-0"><i class="fa-solid fa-earth-asia text-danger me-2"></i> Command Center Real-Time Radar</h3>
+                <span class="live-indicator">Online tracking grid</span>
+            </div>
+            <div style="position: relative;" class="flex-grow-1 d-flex flex-column">
+                <div id="adminMap" class="map-container flex-grow-1" style="min-height: 420px;"></div>
+                
+                <!-- Floating Map Quick Controls -->
+                <div class="map-floating-bar">
+                    <button type="button" class="map-tool-btn" id="btnAdminFitAll" title="Fit all incidents on screen">
+                        <i class="fa-solid fa-expand text-info"></i> Fit All Incidents
+                    </button>
+                    <button type="button" class="map-tool-btn" id="btnAdminLocateMe" title="Show my current command post location">
+                        <i class="fa-solid fa-location-crosshairs text-success"></i> My Location
+                    </button>
+                </div>
+
+                <!-- Live Mouse Cursor Coordinates HUD -->
+                <div class="map-hud-badge" id="adminMapHud">
+                    Cursor: <span>-- , --</span> | Zoom: <span id="adminHudZoom">12</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Charts -->
+    <div class="col-lg-4">
+        <div class="glass-card h-100 card-body-clean d-flex flex-column">
+            <h3 class="h5 text-white mb-3"><i class="fa-solid fa-chart-pie text-primary me-2"></i> Disaster Hotspots</h3>
+            <div class="chart-container flex-grow-1 d-flex align-items-center justify-content-center" style="position: relative; min-height: 250px;">
+                <canvas id="typeChart"></canvas>
+            </div>
+            
+            <div class="border-top border-secondary border-opacity-15 mt-3 pt-3">
+                <span class="text-muted d-block fs-9 mb-2">QUICK SYSTEM CHECKS:</span>
+                <div class="d-flex justify-content-between text-white fs-8">
+                    <span>Available Responders:</span>
+                    <span class="text-success font-weight-bold">@Model.RescueTeams.Count(t => t.Status == "Available") Active</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Mass Emergency SMS Broadcast Station -->
+<div class="row fade-in mb-4">
+    <div class="col-12">
+        <div class="glass-card border border-danger border-opacity-20">
+            <div class="card-header-clean bg-danger bg-opacity-10 d-flex justify-content-between align-items-center">
+                <div>
+                    <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-tower-cell text-danger me-2"></i> Emergency Mass SMS Alert Broadcast Station</h3>
+                    <p class="text-muted fs-9 mb-0">Compose and dispatch SMS alerts directly to all registered users' mobile numbers</p>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <button type="button" class="btn btn-sm btn-outline-light py-1 fs-9" data-bs-toggle="modal" data-bs-target="#smsGatewayModal">
+                        <i class="fa-solid fa-gear me-1"></i> Gateway Settings (@smsConfig.Provider)
+                    </button>
+                    <span class="badge bg-danger text-uppercase px-3 py-1 fs-9 pulse-slow"><i class="fa-solid fa-bullhorn me-1"></i> Gateway Active</span>
+                </div>
+            </div>
+            <div class="card-body-clean">
+                <form asp-controller="Admin" asp-action="SendSMSAlert" method="post">
+                    @Html.AntiForgeryToken()
+                    <div class="row g-3">
+                        <div class="col-lg-6">
+                            <label class="form-label text-white-50 fs-8">Broadcast Alert Message Text</label>
+                            <textarea name="alertMessage" rows="4" class="form-control form-control-dark" placeholder="e.g. FLASH WARNING: High water level flood threat in Riverbed area. Evacuate to higher ground immediately!" required></textarea>
+                        </div>
+                        <div class="col-lg-6 d-flex flex-column justify-content-between">
+                            <div class="row g-2 mb-2">
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-50 fs-8">Target Audience Filter</label>
+                                    <select name="targetRole" class="form-select form-control-dark" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27m2 5 6 6 6-6%27/%3e%3c/svg%3e');">
+                                        <option value="DirectOnly" selected>Direct Mobile Number Only</option>
+                                        <option value="All">All Registered Users</option>
+                                        <option value="Citizen">Citizens Only</option>
+                                        <option value="RescueTeam">Rescue Crews Only</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label text-white-50 fs-8">Direct Mobile Number(s)</label>
+                                    <input type="text" name="customPhoneNumber" class="form-control form-control-dark" placeholder="e.g. 9876543210 (Optional)" />
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-premium-danger w-100 py-2">
+                                <i class="fa-solid fa-paper-plane me-2"></i> Send Mass SMS Alert Now
+                            </button>
+                        </div>
+                    </div>
+                </form>
+
+                @if (recentSMS.Any())
+                {
+                    <hr class="border-secondary my-3" />
+                    <span class="text-muted d-block fs-9 mb-2 text-uppercase font-weight-bold">Recent SMS Broadcast Logs:</span>
+                    <div class="d-flex flex-column gap-2">
+                        @foreach (var sms in recentSMS)
+                        {
+                            <div class="p-2.5 rounded bg-dark bg-opacity-40 border border-secondary border-opacity-20 d-flex justify-content-between align-items-center">
+                                <div class="me-3" style="max-width: 80%;">
+                                    <span class="badge bg-danger fs-9 me-2">Target: @sms.TargetRole</span>
+                                    <span class="text-white fs-8">"@sms.Message"</span>
+                                </div>
+                                <div class="text-end">
+                                    <span class="badge bg-success fs-9 mb-1 d-block"><i class="fa-solid fa-mobile-screen me-1"></i> Sent to @sms.RecipientCount User(s)</span>
+                                    <span class="text-muted fs-9 font-monospace">@sms.SentAt.ToLocalTime().ToString("t")</span>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- SMS Gateway Configuration Modal -->
+<div class="modal fade" id="smsGatewayModal" tabindex="-1" aria-labelledby="smsGatewayModalLabel" aria-hidden="true" style="backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content glass-card border border-primary border-opacity-25" style="background: rgba(11, 15, 25, 0.95);">
+            <div class="modal-header border-bottom border-secondary border-opacity-20 px-4 py-3">
+                <h5 class="modal-title text-white" id="smsGatewayModalLabel"><i class="fa-solid fa-sliders text-primary me-2"></i> SMS Gateway Credentials</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-controller="Admin" asp-action="SaveSMSGatewayConfig" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body px-4 py-4">
+                    <div class="mb-3">
+                        <label class="form-label text-white-50 fs-8">Select SMS Gateway Provider</label>
+                        <select name="Provider" id="smsProviderSelect" class="form-select form-control-dark" onchange="toggleSMSProviderFields()">
+                            <option value="Simulation" selected="@(smsConfig.Provider == "Simulation")">Simulation Mode (App & Live UI Alerts Only)</option>
+                            <option value="Fast2SMS" selected="@(smsConfig.Provider == "Fast2SMS")">Fast2SMS API (India Real Mobile SMS)</option>
+                        </select>
+                    </div>
+
+                    <!-- Fast2SMS Fields -->
+                    <div id="fast2smsFields" style="display: @(smsConfig.Provider == "Fast2SMS" ? "block" : "none");">
+                        <div class="mb-3">
+                            <label class="form-label text-white-50 fs-8">Fast2SMS Authorization API Key</label>
+                            <input type="password" name="ApiKey" value="@smsConfig.ApiKey" class="form-control form-control-dark" placeholder="Paste Fast2SMS API Key" />
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-secondary border-opacity-20 px-4 py-3">
+                    <button type="button" class="btn btn-outline-light btn-sm" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-premium-primary btn-sm px-4">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> Save Gateway Credentials
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    function toggleSMSProviderFields() {
+        var provider = document.getElementById('smsProviderSelect').value;
+        document.getElementById('fast2smsFields').style.display = (provider === 'Fast2SMS') ? 'block' : 'none';
+    }
+</script>
+
+<!-- Operations Queue Grid -->
+<div class="row fade-in">
+    <div class="col-12">
+        <div class="glass-card">
+            <div class="card-header-clean bg-dark bg-opacity-35 d-flex justify-content-between align-items-center">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-list-check text-warning me-2"></i> Active Incidents Queue</h3>
+                <div class="d-flex gap-2">
+                    <input type="text" id="searchInput" class="form-control form-control-dark form-control-sm py-1.5" placeholder="Search incidents..." style="max-width: 220px;" />
+                </div>
+            </div>
+            <div class="card-body-clean">
+                <div class="table-responsive">
+                    <table class="table custom-table" id="incidentsTable">
+                        <thead>
+                            <tr>
+                                <th>Incident ID</th>
+                                <th>Category</th>
+                                <th>Description</th>
+                                <th>Reporter</th>
+                                <th>Risk Score</th>
+                                <th>Priority</th>
+                                <th>Status</th>
+                                <th class="text-center">Dispatch Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incidentsList">
+                            @foreach (var e in Model.ActiveEmergencies)
+                            {
+                                <tr id="row-@e.Id">
+                                    <td class="font-monospace text-white-50">#@e.Id</td>
+                                    <td class="font-weight-bold text-white">@e.EmergencyType</td>
+                                    <td class="text-white-50 fs-8" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                        @e.Description
+                                    </td>
+                                    <td class="text-white">@e.Citizen?.FullName</td>
+                                    <td class="font-weight-bold text-danger">@e.RiskScore%</td>
+                                    <td>
+                                        <span class="badge-priority badge-@e.PriorityLevel.ToLowerInvariant()">@e.PriorityLevel</span>
+                                    </td>
+                                    <td>
+                                        <span class="text-info fs-8 font-weight-bold status-cell">@e.Status</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <div class="d-flex gap-2 justify-content-center">
+                                            <a asp-controller="Emergency" asp-action="Track" asp-route-id="@e.Id" class="btn btn-sm btn-outline-light">
+                                                <i class="fa-solid fa-eye"></i> Track
+                                            </a>
+                                            
+                                            @if (e.Status == "Created" || e.Status == "AI Analyzed")
+                                            {
+                                                <button type="button" class="btn btn-sm btn-premium-danger py-1" onclick="openDispatchModal(@e.Id, '@e.EmergencyType', @e.Latitude, @e.Longitude)">
+                                                    <i class="fa-solid fa-truck-droplet"></i> Dispatch
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-outline-secondary py-1" disabled>Assigned</button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dispatch Allocation Modal -->
+<form id="afForm" style="display:none;">
+    @Html.AntiForgeryToken()
+</form>
+<div class="modal fade" id="dispatchModal" tabindex="-1" aria-labelledby="dispatchModalLabel" aria-hidden="true" style="backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content glass-card border border-danger border-opacity-25" style="background: rgba(11, 15, 25, 0.95);">
+            <div class="modal-header border-bottom border-secondary border-opacity-20 px-4 py-3">
+                <h5 class="modal-title text-white" id="dispatchModalLabel"><i class="fa-solid fa-truck-medical text-danger me-2"></i> Crisis Response Dispatch</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body px-4 py-4">
+                <input type="hidden" id="modalRequestId" />
+                <div class="alert alert-danger bg-danger bg-opacity-5 border-danger border-opacity-10 text-white-50 fs-8 mb-4">
+                    Incident: <strong id="modalCrisisType" class="text-danger"></strong>, coordinates: 
+                    <strong id="modalCoords" class="font-monospace text-white"></strong>.
+                </div>
+                
+                <h6 class="text-white mb-3"><i class="fa-solid fa-compass text-primary me-1"></i> Available Crew Coordinates Check:</h6>
+                
+                <div class="table-responsive" style="max-height: 250px; overflow-y: auto;">
+                    <table class="table custom-table">
+                        <thead>
+                            <tr>
+                                <th>Crew Name</th>
+                                <th>Contact</th>
+                                <th>Distance</th>
+                                <th>Current Status</th>
+                                <th class="text-center">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="dispatchTeamsList">
+                            <!-- Populated dynamically via JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <script>
+        // Array of active rescue teams to calculate distances in browser
+        var teamsData = [
+            @foreach (var t in Model.RescueTeams)
+            {
+                <text>{
+                    id: @t.Id,
+                    name: "@t.TeamName",
+                    contact: "@t.ContactNumber",
+                    lat: @(t.CurrentLatitude.HasValue ? t.CurrentLatitude.Value.ToString() : "null"),
+                    lng: @(t.CurrentLongitude.HasValue ? t.CurrentLongitude.Value.ToString() : "null"),
+                    status: "@t.Status"
+                },</text>
+            }
+        ];
+
+        $(document).ready(function() {
+            // 1. Setup Chart
+            var ctx = document.getElementById('typeChart').getContext('2d');
+            var chartLabels = [];
+            var chartData = [];
+
+            @foreach (var c in Model.EmergencyTypeCounts)
+            {
+                <text>
+                chartLabels.push("@c.Key");
+                chartData.push(@c.Value);
+                </text>
+            }
+
+            var typeChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: chartLabels,
+                    datasets: [{
+                        data: chartData,
+                        backgroundColor: ['#ef4444', '#f97316', '#3b82f6', '#eab308', '#22c55e', '#a855f7'],
+                        borderWidth: 1,
+                        borderColor: '#1f2937'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#9ca3af',
+                                font: { family: 'Inter', size: 10 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 2. Initialize Leaflet Map with smooth drag and zoom
+            var map = L.map('adminMap', {
+                center: [23.0225, 72.5714],
+                zoom: 12,
+                minZoom: 3,
+                maxZoom: 19,
+                scrollWheelZoom: true,
+                dragging: true
+            });
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            var markersGroup = L.featureGroup().addTo(map);
+            var incidentMarkers = {};
+            var teamMarkers = {};
+            var adminLocationMarker = null;
+
+            // Render existing emergencies on Map
+            @foreach (var e in Model.ActiveEmergencies)
+            {
+                <text>
+                addIncidentMarker(@e.Id, "@e.EmergencyType", @e.Latitude, @e.Longitude, "@e.PriorityLevel");
+                </text>
+            }
+
+            // Render existing teams on Map
+            teamsData.forEach(function(t) {
+                if (t.lat && t.lng) {
+                    addTeamMarker(t.id, t.name, t.lat, t.lng, t.status);
+                }
+            });
+
+            if (markersGroup.getBounds().isValid()) {
+                map.fitBounds(markersGroup.getBounds().pad(0.15));
+            }
+
+            // Live Mouse Cursor Coordinates HUD
+            map.on('mousemove', function(e) {
+                $('#adminMapHud span:first').text(e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5));
+            });
+            map.on('zoomend', function() {
+                $('#adminHudZoom').text(map.getZoom());
+            });
+
+            // Fit All Incidents Button
+            $('#btnAdminFitAll').click(function() {
+                if (markersGroup.getBounds().isValid()) {
+                    map.fitBounds(markersGroup.getBounds().pad(0.15));
+                } else {
+                    map.setView([23.0225, 72.5714], 12);
+                }
+            });
+
+            // Admin My Location HQ Button
+            $('#btnAdminLocateMe').click(function() {
+                var btn = $(this);
+                var origHtml = btn.html();
+                btn.html('<i class="fa-solid fa-spinner fa-spin text-success"></i> Locating HQ...');
+
+                getBrowserLocation(function(res) {
+                    btn.html(origHtml);
+                    if (res.success) {
+                        var lat = res.latitude;
+                        var lng = res.longitude;
+
+                        if (adminLocationMarker) {
+                            adminLocationMarker.setLatLng([lat, lng]);
+                        } else {
+                            var hqIcon = L.divIcon({
+                                html: `<div style="background: #10b981; border: 3px solid #ffffff; width: 22px; height: 22px; border-radius: 50%; box-shadow: 0 0 16px #10b981; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-tower-broadcast" style="color:white; font-size:11px;"></i></div>`,
+                                className: 'admin-hq-marker',
+                                iconSize: [22, 22],
+                                iconAnchor: [11, 11]
+                            });
+                            adminLocationMarker = L.marker([lat, lng], { icon: hqIcon }).addTo(map)
+                                .bindPopup("<strong>Command HQ (Your Location)</strong><br>" + lat.toFixed(5) + ", " + lng.toFixed(5));
+                            markersGroup.addLayer(adminLocationMarker);
+                        }
+
+                        map.setView([lat, lng], 15, { animate: true });
+                        adminLocationMarker.openPopup();
+                    } else {
+                        alert(res.message || "Unable to acquire location.");
+                    }
+                });
+            });
+
+            // Helper to add Incident Marker
+            function addIncidentMarker(id, type, lat, lng, priority) {
+                var color = 'var(--accent-yellow)';
+                if (priority === 'Critical') color = 'var(--accent-red)';
+                else if (priority === 'High') color = 'var(--accent-orange)';
+                else if (priority === 'Low') color = 'var(--accent-green)';
+
+                var icon = L.divIcon({
+                    html: `<div style="background: ${color}; border: 2px solid #ffffff; width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px ${color};"></div>`,
+                    className: 'emergency-dot',
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
+                });
+
+                var m = L.marker([lat, lng], { icon: icon }).addTo(markersGroup)
+                    .bindPopup(`<strong>Incident #${id} (${type})</strong><br>Priority: ${priority}<br><a href="/Emergency/Track/${id}" class="fs-9 text-danger font-weight-bold">View details</a>`);
+                
+                incidentMarkers[id] = m;
+            }
+
+            // Helper to add/update Team Marker
+            function addTeamMarker(id, name, lat, lng, status) {
+                var color = 'var(--accent-blue)';
+                if (status === 'Offline') color = 'var(--text-muted)';
+                else if (status === 'Busy') color = 'var(--accent-red)';
+
+                var icon = L.divIcon({
+                    html: `<div style="background: ${color}; border: 2px solid #ffffff; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 12px ${color}; display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-truck-medical" style="color:white; font-size:9px;"></i></div>`,
+                    className: 'team-dot',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                });
+
+                if (teamMarkers[id]) {
+                    teamMarkers[id].setLatLng([lat, lng]);
+                } else {
+                    var m = L.marker([lat, lng], { icon: icon }).addTo(map)
+                        .bindPopup(`<strong>Crew: ${name}</strong><br>Status: ${status}`);
+                    teamMarkers[id] = m;
+                }
+            }
+
+            // Search filter for table
+            $('#searchInput').keyup(function() {
+                var val = $(this).val().toLowerCase();
+                $('#incidentsList tr').filter(function() {
+                    $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
+                });
+            });
+
+            // SignalR dynamic triggers
+            if (window.rescueHub) {
+                window.rescueHub.on("NewEmergency", function(id, type, desc, lat, lng, priority, score) {
+                    console.log("New incident received:", id);
+                    
+                    // Add Row to incidents list
+                    var tr = `<tr id="row-${id}" class="fade-in">
+                        <td class="font-monospace text-white-50">#${id}</td>
+                        <td class="font-weight-bold text-white">${type}</td>
+                        <td class="text-white-50 fs-8" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${desc}</td>
+                        <td class="text-white">Citizen Report</td>
+                        <td class="font-weight-bold text-danger">${score}%</td>
+                        <td><span class="badge-priority badge-${priority.toLowerCase()}">${priority}</span></td>
+                        <td><span class="text-info fs-8 font-weight-bold status-cell">Created</span></td>
+                        <td class="text-center">
+                            <div class="d-flex gap-2 justify-content-center">
+                                <a href="/Emergency/Track/${id}" class="btn btn-sm btn-outline-light"><i class="fa-solid fa-eye"></i> Track</a>
+                                <button type="button" class="btn btn-sm btn-premium-danger py-1" onclick="openDispatchModal(${id}, '${type}', ${lat}, ${lng})">
+                                    <i class="fa-solid fa-truck-droplet"></i> Dispatch
+                                </button>
+                            </div>
+                        </td>
+                    </tr>`;
+                    $('#incidentsList').prepend(tr);
+
+                    // Add map marker
+                    addIncidentMarker(id, type, lat, lng, priority);
+
+                    // Increment metrics
+                    $('#kpiActive').text(parseInt($('#kpiActive').text()) + 1);
+                    if (priority === 'Critical') $('#kpiCritical').text(parseInt($('#kpiCritical').text()) + 1);
+                    else if (priority === 'High') $('#kpiHigh').text(parseInt($('#kpiHigh').text()) + 1);
+                    else if (priority === 'Medium') $('#kpiMedium').text(parseInt($('#kpiMedium').text()) + 1);
+                    else $('#kpiLow').text(parseInt($('#kpiLow').text()) + 1);
+
+                    // Adjust map view
+                    if (markersGroup.getBounds().isValid()) {
+                        map.fitBounds(markersGroup.getBounds().pad(0.15));
+                    }
+                });
+
+                window.rescueHub.on("StatusUpdate", function(id, status, notes) {
+                    console.log("Status update received for admin:", id, status);
+                    
+                    var row = $('#row-' + id);
+                    if (row.length) {
+                        row.find('.status-cell').text(status);
+                        
+                        // Disable dispatch button if assigned/in-progress/resolved
+                        if (status !== 'Created' && status !== 'AI Analyzed') {
+                            row.find('button[onclick^="openDispatchModal"]').replaceWith('<button class="btn btn-sm btn-outline-secondary py-1" disabled>Assigned</button>');
+                        }
+
+                        if (status === 'Resolved' || status === 'Rejected') {
+                            // Animate delete or move
+                            row.addClass('opacity-50');
+                            $('#kpiActive').text(Math.max(0, parseInt($('#kpiActive').text()) - 1));
+                            
+                            // Remove incident map pin
+                            if (incidentMarkers[id]) {
+                                map.removeLayer(incidentMarkers[id]);
+                                delete incidentMarkers[id];
+                            }
+                        }
+                    }
+
+                    // Special update if AI Analyzed triggers priorities details
+                    if (status === "AI Analyzed") {
+                        setTimeout(function() { window.location.reload(); }, 2000);
+                    }
+                });
+
+                window.rescueHub.on("TeamLocationUpdate", function(tId, rId, lat, lng, status) {
+                    console.log("Team position update received:", tId, lat, lng);
+                    addTeamMarker(tId, "Rescue Crew " + tId, lat, lng, status);
+                });
+            }
+        });
+
+        // Open Modal & Calculate distances
+        function openDispatchModal(reqId, type, lat, lng) {
+            var afToken = $('#afForm input[name="__RequestVerificationToken"]').val() || '';
+            $('#modalRequestId').val(reqId);
+            $('#modalCrisisType').text(type || 'Emergency');
+            $('#modalCoords').text(lat.toFixed(4) + ", " + lng.toFixed(4));
+            
+            // Build teams allocation rows
+            var tbody = $('#dispatchTeamsList');
+            tbody.empty();
+            
+            // Filter only Available crews
+            var availableTeams = teamsData.filter(t => t.status === 'Available');
+
+            if (availableTeams.length === 0) {
+                tbody.append('<tr><td colspan="5" class="text-center text-muted fs-8 py-3">No rescue crews are currently available. Check team status.</td></tr>');
+            } else {
+                // Calculate distance using JS Haversine
+                availableTeams.forEach(function(team) {
+                    var dist = haversineDistance(lat, lng, team.lat, team.lng);
+                    team.distance = dist;
+                });
+
+                // Sort by nearest distance
+                availableTeams.sort((a, b) => a.distance - b.distance);
+
+                availableTeams.forEach(function(team) {
+                    var tr = `<tr>
+                        <td class="text-white font-weight-bold">${team.name}</td>
+                        <td class="text-white-50 fs-9">${team.contact}</td>
+                        <td class="text-danger font-weight-bold fs-8">${team.distance.toFixed(2)} km</td>
+                        <td><span class="badge bg-success">${team.status}</span></td>
+                        <td class="text-center">
+                            <form action="/Admin/AssignTeam" method="post">
+                                <input type="hidden" name="__RequestVerificationToken" value="${afToken}" />
+                                <input type="hidden" name="requestId" value="${reqId}" />
+                                <input type="hidden" name="teamId" value="${team.id}" />
+                                <button type="submit" class="btn btn-sm btn-premium-danger py-1">
+                                    <i class="fa-solid fa-paper-plane me-1"></i> Dispatch Crew
+                                </button>
+                            </form>
+                        </td>
+                    </tr>`;
+                    tbody.append(tr);
+                });
+            }
+
+            var modal = new bootstrap.Modal(document.getElementById('dispatchModal'));
+            modal.show();
+        }
+
+        // Javascript distance helper
+        function haversineDistance(lat1, lon1, lat2, lon2) {
+            function toRad(x) { return x * Math.PI / 180; }
+            var R = 6371; // km
+            var dLat = toRad(lat2 - lat1);
+            var dLon = toRad(lon2 - lon1);
+            var a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+            var c = 2 * Math.atan2(Math.Sqrt ? Math.Sqrt(a) : Math.sqrt(a), Math.Sqrt ? Math.Sqrt(1-a) : Math.sqrt(1-a));
+            return R * c;
+        }
+    </script>
+}

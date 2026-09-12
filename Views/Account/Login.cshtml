@@ -1,0 +1,50 @@
+@model LoginViewModel
+@{
+    ViewData["Title"] = "Security Access Portal";
+}
+
+<div class="row justify-content-center align-items-center py-5 fade-in">
+    <div class="col-md-5">
+        <div class="glass-card">
+            <div class="card-header-clean text-center">
+                <i class="fa-solid fa-shield-halved text-danger fa-3x mb-3 pulse-slow"></i>
+                <h2 class="h3 text-white">System Login</h2>
+                <p class="text-muted mb-0">Authorized Personnel & Citizen Verification</p>
+            </div>
+            <div class="card-body-clean">
+                <form asp-action="Login" method="post" autocomplete="off">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3 fs-9"></div>
+
+                    <div class="mb-4">
+                        <label asp-for="Username" class="form-label text-white-50"><i class="fa-solid fa-user me-1"></i> Username</label>
+                        <input asp-for="Username" class="form-control form-control-dark" placeholder="Enter username" />
+                        <span asp-validation-for="Username" class="text-danger fs-9 mt-1 d-block"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="Password" class="form-label text-white-50"><i class="fa-solid fa-key me-1"></i> Security Password</label>
+                        <input asp-for="Password" class="form-control form-control-dark" placeholder="••••••••" />
+                        <span asp-validation-for="Password" class="text-danger fs-9 mt-1 d-block"></span>
+                    </div>
+
+                    <div class="mb-4 form-check text-start">
+                        <input asp-for="RememberMe" class="form-check-input" style="background-color: var(--bg-tertiary); border-color: var(--glass-border);" />
+                        <label asp-for="RememberMe" class="form-check-label text-muted fs-8">Keep session active</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-premium-danger w-100 py-2.5">
+                        <i class="fa-solid fa-right-to-bracket me-1"></i> Verify Credentials
+                    </button>
+                </form>
+            </div>
+            <div class="card-footer border-top border-secondary text-center py-3 bg-dark bg-opacity-25" style="border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);">
+                <span class="text-muted">New user? </span>
+                <a asp-action="Register" class="text-danger font-weight-bold text-decoration-none">Create Response Account</a>
+            </div>
+        </div>
+
+        <div class="text-center mt-4">
+            <span class="text-muted fs-9"><i class="fa-solid fa-lock-open me-1"></i> Demo Access: admin / admin123</span>
+        </div>
+    </div>
+</div>

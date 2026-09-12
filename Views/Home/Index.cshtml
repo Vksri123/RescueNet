@@ -1,0 +1,115 @@
+@{
+    ViewData["Title"] = "Emergency Operations";
+}
+
+<div class="row align-items-center justify-content-center py-5 fade-in">
+    <div class="col-lg-10 text-center">
+        <div class="hero-glow mb-4">
+            <span class="badge bg-danger text-uppercase px-3 py-2 fs-9 tracking-wider pulse-slow"><i class="fa-solid fa-satellite-dish me-1"></i> Global Response Active</span>
+        </div>
+        <h1 class="display-3 font-weight-bold text-white mb-3" style="font-family: 'Outfit', sans-serif;">
+            Rescue<span class="text-danger">Net</span> Command
+        </h1>
+        <p class="lead text-muted mx-auto mb-5" style="max-width: 700px; font-size: 1.25rem;">
+            A unified crisis response grid connecting citizens, AI-driven dispatch algorithms, and local rescue crews in real-time to save lives.
+        </p>
+
+        <!-- Access Portals Grid -->
+        <div class="row g-4 mt-2 justify-content-center">
+            <!-- Citizen Portal -->
+            <div class="col-md-4">
+                <div class="glass-card h-100 card-body-clean text-center p-4">
+                    <div class="portal-icon-box bg-danger bg-opacity-15 text-danger mb-4 mx-auto">
+                        <i class="fa-solid fa-kit-medical fa-2x"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Citizens Portal</h3>
+                    <p class="text-muted fs-6 mb-4">
+                        Report emergencies with GPS, upload footage, and track rescue crews with real-time ETA maps.
+                    </p>
+                    <a asp-controller="Account" asp-action="Register" class="btn btn-premium-danger w-100">
+                        <i class="fa-solid fa-circle-exclamation me-1"></i> Report Emergency
+                    </a>
+                </div>
+            </div>
+
+            <!-- Rescue Crew Portal -->
+            <div class="col-md-4">
+                <div class="glass-card h-100 card-body-clean text-center p-4">
+                    <div class="portal-icon-box bg-blue bg-opacity-15 text-primary mb-4 mx-auto" style="background-color: rgba(59, 130, 246, 0.15)">
+                        <i class="fa-solid fa-truck-medical fa-2x" style="color: var(--accent-blue)"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Rescue Crews</h3>
+                    <p class="text-muted fs-6 mb-4">
+                        Access dispatch coordinates, optimize response routing, and toggle availability status instantly.
+                    </p>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-premium-primary w-100">
+                        <i class="fa-solid fa-shield-halved me-1"></i> Team Login
+                    </a>
+                </div>
+            </div>
+
+            <!-- Command Center Portal -->
+            <div class="col-md-4">
+                <div class="glass-card h-100 card-body-clean text-center p-4">
+                    <div class="portal-icon-box bg-yellow bg-opacity-15 text-warning mb-4 mx-auto" style="background-color: rgba(234, 179, 8, 0.15)">
+                        <i class="fa-solid fa-tower-observation fa-2x" style="color: var(--accent-yellow)"></i>
+                    </div>
+                    <h3 class="h4 mb-3">Operations Room</h3>
+                    <p class="text-muted fs-6 mb-4">
+                        Monitor active requests, view live emergency heatmaps, run metrics, and assign teams manually.
+                    </p>
+                    <a asp-controller="Account" asp-action="Login" class="btn btn-premium-secondary w-100">
+                        <i class="fa-solid fa-lock me-1"></i> Admin Console
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Live System Statistics banner -->
+        <div class="glass-card mt-5 p-4 text-start">
+            <div class="row align-items-center">
+                <div class="col-lg-3 text-center text-lg-start mb-3 mb-lg-0">
+                    <div class="live-indicator">Network Status</div>
+                    <h4 class="h5 mb-0 text-white mt-1">Operational</h4>
+                </div>
+                <div class="col-lg-9">
+                    <div class="row text-center">
+                        <div class="col-4 border-end border-secondary">
+                            <span class="text-muted d-block fs-7 text-uppercase">Dispatch Latency</span>
+                            <span class="h5 text-success font-weight-bold">&lt; 3.0s</span>
+                        </div>
+                        <div class="col-4 border-end border-secondary">
+                            <span class="text-muted d-block fs-7 text-uppercase">Active Teams</span>
+                            <span class="h5 text-white font-weight-bold">Online</span>
+                        </div>
+                        <div class="col-4">
+                            <span class="text-muted d-block fs-7 text-uppercase">Tracking Accuracy</span>
+                            <span class="h5 text-primary font-weight-bold">99.8%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .hero-glow {
+        position: relative;
+        display: inline-block;
+    }
+    .portal-icon-box {
+        width: 70px;
+        height: 70px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .bg-opacity-15 {
+        background-color: rgba(239, 68, 68, 0.15);
+    }
+    .fs-7 {
+        font-size: 0.8rem;
+    }
+</style>

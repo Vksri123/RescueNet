@@ -1,0 +1,266 @@
+@model CreateEmergencyViewModel
+@{
+    ViewData["Title"] = "File Crisis Request";
+}
+
+<div class="row fade-in">
+    <div class="col-lg-5 mb-4">
+        <div class="glass-card h-100">
+            <div class="card-header-clean bg-danger bg-opacity-5">
+                <h2 class="h4 mb-1 text-white"><i class="fa-solid fa-bell-exclamation text-danger me-2"></i> Report Emergency</h2>
+                <p class="text-muted mb-0 fs-8">Provide accurate detail for instant AI analysis and dispatch</p>
+            </div>
+            <div class="card-body-clean">
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3 fs-9"></div>
+
+                    <!-- Type Selector -->
+                    <div class="mb-4">
+                        <label asp-for="EmergencyType" class="form-label text-white-50">Crisis Incident Type</label>
+                        <select asp-for="EmergencyType" class="form-select form-control-dark" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27m2 5 6 6 6-6%27/%3e%3c/svg%3e');">
+                            <option value="">-- Choose emergency type --</option>
+                            <option value="Flood">Flood (Severe water rise/trapped)</option>
+                            <option value="Fire">Fire (Structural/forest blaze)</option>
+                            <option value="Accident">Road Accident (Vehicle crash/injury)</option>
+                            <option value="Medical">Medical Emergency (Severe health crisis)</option>
+                            <option value="Earthquake">Earthquake (Structural collapse/trapped)</option>
+                            <option value="Other">Other Hazardous Incident</option>
+                        </select>
+                        <span asp-validation-for="EmergencyType" class="text-danger fs-9 mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Description -->
+                    <div class="mb-4">
+                        <label asp-for="Description" class="form-label text-white-50">Describe the Crisis Situation</label>
+                        <textarea asp-for="Description" rows="4" class="form-control form-control-dark" placeholder="Specify if children/elderly are trapped, water levels, injuries, or fire scale..."></textarea>
+                        <span asp-validation-for="Description" class="text-danger fs-9 mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Location Coordinates -->
+                    <div class="row mb-4">
+                        <div class="col-6">
+                            <label asp-for="Latitude" class="form-label text-white-50 fs-8">Latitude</label>
+                            <input asp-for="Latitude" class="form-control form-control-dark" id="latInput" readonly />
+                            <span asp-validation-for="Latitude" class="text-danger fs-9 mt-1 d-block"></span>
+                        </div>
+                        <div class="col-6">
+                            <label asp-for="Longitude" class="form-label text-white-50 fs-8">Longitude</label>
+                            <input asp-for="Longitude" class="form-control form-control-dark" id="lngInput" readonly />
+                            <span asp-validation-for="Longitude" class="text-danger fs-9 mt-1 d-block"></span>
+                        </div>
+                    </div>
+
+                    <!-- Media Upload -->
+                    <div class="mb-4">
+                        <label asp-for="MediaFile" class="form-label text-white-50">Upload Image/Video Evidence</label>
+                        <input asp-for="MediaFile" type="file" class="form-control form-control-dark" accept="image/*,video/*" />
+                        <span asp-validation-for="MediaFile" class="text-danger fs-9 mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn btn-premium-danger w-100 py-2.5">
+                        <i class="fa-solid fa-satellite-dish me-1"></i> Dispatch Rescue Net Alert
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mapping Column -->
+    <div class="col-lg-7 mb-4">
+        <div class="glass-card h-100 card-body-clean">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-map-location-dot text-danger me-2"></i> Select Crisis Location</h3>
+                <button type="button" class="btn btn-sm btn-outline-light" id="gpsBtn">
+                    <i class="fa-solid fa-location-crosshairs me-1"></i> Retrieve My GPS
+                </button>
+            </div>
+            
+            <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-white-50 fs-8 mb-3">
+                <i class="fa-solid fa-circle-info text-info me-1"></i> 
+                Click or drag the red marker on the map to set the exact coordinates of the disaster location.
+            </div>
+
+            <!-- Leaflet Map Container with Floating Controls and Crosshair -->
+            <div style="position: relative;">
+                <div id="map" class="map-container" style="height: 420px;"></div>
+                
+                <!-- Floating Map Quick Controls -->
+                <div class="map-floating-bar">
+                    <button type="button" class="map-tool-btn" id="btnRecenterPin" title="Center map on Incident Pin">
+                        <i class="fa-solid fa-crosshairs text-danger"></i> Recenter Pin
+                    </button>
+                    <button type="button" class="map-tool-btn" id="btnLiveGps" title="Acquire GPS Location">
+                        <i class="fa-solid fa-location-arrow text-primary"></i> My GPS
+                    </button>
+                    <button type="button" class="map-tool-btn" id="btnToggleCenterMode" title="Move map with mouse to set spot under crosshair">
+                        <i class="fa-solid fa-hand-pointer text-warning"></i> Move Map Mode
+                    </button>
+                </div>
+
+                <!-- Center Crosshair for 'Move Map with Mouse' mode -->
+                <div id="centerCrosshair" class="map-center-crosshair" style="display: none;">
+                    <i class="fa-solid fa-location-dot crosshair-icon"></i>
+                    <div class="crosshair-dot"></div>
+                    <span class="crosshair-label">Move map with mouse to set location</span>
+                </div>
+
+                <!-- Live Mouse Cursor Coordinates HUD -->
+                <div class="map-hud-badge" id="mapCoordinatesHud">
+                    Cursor: <span>-- , --</span> | Zoom: <span id="hudZoom">14</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var defaultLat = parseFloat($('#latInput').val()) || 23.0225;
+            var defaultLng = parseFloat($('#lngInput').val()) || 72.5714;
+            var isCenterMode = false;
+
+            // Initialize Map with mouse dragging enabled
+            var map = L.map('map', {
+                center: [defaultLat, defaultLng],
+                zoom: 14,
+                minZoom: 3,
+                maxZoom: 19,
+                scrollWheelZoom: true,
+                dragging: true
+            });
+
+            // OpenStreetMap tile layer (Free, no API key, zero watermarks)
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            // High-visibility animated Incident Pin (never vanishes on zoom)
+            var pinIcon = L.divIcon({
+                html: `
+                    <div class="custom-emergency-pin">
+                        <div class="pin-pulse"></div>
+                        <div class="pin-core">
+                            <i class="fa-solid fa-triangle-exclamation"></i>
+                        </div>
+                        <div class="pin-label">Incident Ground</div>
+                    </div>
+                `,
+                className: 'disaster-beacon-marker',
+                iconSize: [38, 48],
+                iconAnchor: [19, 44],
+                popupAnchor: [0, -44]
+            });
+
+            var marker = L.marker([defaultLat, defaultLng], {
+                draggable: true,
+                icon: pinIcon
+            }).addTo(map);
+
+            marker.bindPopup("<strong>Disaster Ground Location</strong><br>Drag this pin or click anywhere on the map.").openPopup();
+
+            function updateCoordinates(lat, lng) {
+                $('#latInput').val(lat.toFixed(6));
+                $('#lngInput').val(lng.toFixed(6));
+            }
+
+            function applyLocation(lat, lng, zoomIn) {
+                marker.setLatLng([lat, lng]);
+                if (zoomIn) {
+                    map.setView([lat, lng], 16, { animate: true });
+                } else {
+                    map.panTo([lat, lng]);
+                }
+                updateCoordinates(lat, lng);
+            }
+
+            // Dragging marker directly with mouse cursor
+            marker.on('drag', function() {
+                var pos = marker.getLatLng();
+                updateCoordinates(pos.lat, pos.lng);
+            });
+            marker.on('dragend', function() {
+                var pos = marker.getLatLng();
+                updateCoordinates(pos.lat, pos.lng);
+            });
+
+            // Clicking anywhere on map moves the pin with mouse cursor
+            map.on('click', function(e) {
+                if (!isCenterMode) {
+                    marker.setLatLng(e.latlng);
+                    updateCoordinates(e.latlng.lat, e.latlng.lng);
+                    marker.openPopup();
+                }
+            });
+
+            // Moving the map with mouse cursor in 'Move Map Mode'
+            map.on('move', function() {
+                if (isCenterMode) {
+                    var center = map.getCenter();
+                    marker.setLatLng(center);
+                    updateCoordinates(center.lat, center.lng);
+                }
+            });
+
+            // Live Mouse Cursor Coordinates HUD
+            map.on('mousemove', function(e) {
+                $('#mapCoordinatesHud span:first').text(e.latlng.lat.toFixed(5) + ', ' + e.latlng.lng.toFixed(5));
+            });
+            map.on('zoomend', function() {
+                $('#hudZoom').text(map.getZoom());
+            });
+
+            // Recenter on Incident Pin button
+            $('#btnRecenterPin').click(function() {
+                map.setView(marker.getLatLng(), Math.max(map.getZoom(), 15), { animate: true });
+                marker.openPopup();
+            });
+
+            // Toggle 'Move Map with Mouse Cursor' mode
+            $('#btnToggleCenterMode').click(function() {
+                isCenterMode = !isCenterMode;
+                $(this).toggleClass('active', isCenterMode);
+                if (isCenterMode) {
+                    $('#centerCrosshair').fadeIn(200);
+                    marker.setOpacity(0);
+                    var center = map.getCenter();
+                    updateCoordinates(center.lat, center.lng);
+                } else {
+                    $('#centerCrosshair').fadeOut(200);
+                    var center = map.getCenter();
+                    marker.setLatLng(center);
+                    marker.setOpacity(1);
+                    updateCoordinates(center.lat, center.lng);
+                }
+            });
+
+            // Browser GPS function
+            function fetchGPS(showAlert) {
+                var btn = $('#btnLiveGps');
+                var origHtml = btn.html();
+                btn.html('<i class="fa-solid fa-spinner fa-spin text-primary"></i> Locating...');
+
+                getBrowserLocation(function(res) {
+                    btn.html(origHtml);
+                    if (res.success) {
+                        applyLocation(res.latitude, res.longitude, true);
+                    } else if (showAlert) {
+                        alert(res.message || "Unable to acquire GPS location. Please allow browser location permissions.");
+                    }
+                });
+            }
+
+            $('#btnLiveGps, #gpsBtn').click(function() {
+                fetchGPS(true);
+            });
+
+            // Auto-acquire user's location on page load
+            fetchGPS(false);
+
+            // Initial input update
+            updateCoordinates(defaultLat, defaultLng);
+        });
+    </script>
+}

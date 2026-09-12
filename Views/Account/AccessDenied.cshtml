@@ -1,0 +1,30 @@
+@{
+    ViewData["Title"] = "Security Access Restricted";
+}
+
+<div class="row justify-content-center align-items-center py-5 fade-in">
+    <div class="col-md-6 text-center">
+        <div class="glass-card p-5">
+            <div class="mb-4">
+                <span class="fa-stack fa-2x">
+                    <i class="fa-solid fa-circle fa-stack-2x text-danger opacity-15"></i>
+                    <i class="fa-solid fa-triangle-exclamation fa-stack-1x text-danger"></i>
+                </span>
+            </div>
+            <h1 class="h2 text-white mb-3">Security Access Denied</h1>
+            <p class="text-muted mb-4">
+                Your credentials do not grant authorization to view this terminal node. Access logs have recorded this attempt.
+            </p>
+            <div class="d-flex justify-content-center gap-3">
+                <a asp-controller="Home" asp-action="Index" class="btn btn-premium-secondary">
+                    <i class="fa-solid fa-house-chimney me-1"></i> Return Home
+                </a>
+                <form asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="btn btn-premium-danger">
+                        <i class="fa-solid fa-right-from-bracket me-1"></i> Log In Differently
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

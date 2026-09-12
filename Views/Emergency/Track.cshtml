@@ -1,0 +1,355 @@
+@model EmergencyRequest
+@{
+    ViewData["Title"] = $"Track Emergency #{Model.Id}";
+    var history = ViewBag.History as List<EmergencyStatusHistory> ?? new List<EmergencyStatusHistory>();
+    var assignment = ViewBag.Assignment as EmergencyAssignment;
+}
+
+<div class="row fade-in">
+    <!-- Main Tracking Details -->
+    <div class="col-lg-7 mb-4">
+        <div class="glass-card mb-4">
+            <div class="card-header-clean bg-danger bg-opacity-5 d-flex justify-content-between align-items-center">
+                <div>
+                    <span class="live-indicator">Live Dispatch tracking</span>
+                    <h2 class="h4 text-white mb-0 mt-1">Request ID: #@Model.Id</h2>
+                </div>
+                <span class="badge bg-secondary">@Model.EmergencyType</span>
+            </div>
+            
+            <div class="card-body-clean">
+                <!-- Status Timeline Tracker -->
+                <div class="timeline-tracker">
+                    @{
+                        string[] statuses = { "Created", "AI Analyzed", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress", "Resolved" };
+                        int currentStepIndex = Array.IndexOf(statuses, Model.Status);
+                        if (currentStepIndex == -1) currentStepIndex = 0; // Default fallback
+                    }
+                    @for (int i = 0; i < statuses.Length; i++)
+                    {
+                        string stepClass = "";
+                        bool isCheck = false;
+
+                        if (Model.Status == "Resolved")
+                        {
+                            stepClass = "completed";
+                            isCheck = true;
+                        }
+                        else if (i == currentStepIndex)
+                        {
+                            stepClass = "active";
+                            isCheck = false;
+                        }
+                        else if (i < currentStepIndex)
+                        {
+                            stepClass = "completed";
+                            isCheck = true;
+                        }
+
+                        <div class="timeline-step @stepClass" data-status-step="@statuses[i]">
+                            <div class="timeline-step-icon">
+                                @if (isCheck)
+                                {
+                                    <i class="fa-solid fa-check"></i>
+                                }
+                                else
+                                {
+                                    @Html.Raw(i + 1)
+                                }
+                            </div>
+                            <div class="timeline-step-label">@statuses[i]</div>
+                        </div>
+                    }
+                </div>
+
+                <hr class="border-secondary my-4" />
+
+                <!-- Details & AI Analysis -->
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h4 class="text-white-50 fs-8 text-uppercase">Citizen Report Description</h4>
+                        <p class="text-white">"@Model.Description"</p>
+                        
+                        @if (!string.IsNullOrEmpty(Model.MediaUrl))
+                        {
+                            <h4 class="text-white-50 fs-8 text-uppercase mt-4">Evidence Media</h4>
+                            <div class="evidence-media-container mt-2">
+                                @if (Model.MediaUrl.EndsWith(".mp4") || Model.MediaUrl.EndsWith(".mov"))
+                                {
+                                    <video src="@Model.MediaUrl" controls class="w-100 rounded border border-secondary" style="max-height: 180px; object-fit: cover;"></video>
+                                }
+                                else
+                                {
+                                    <img src="@Model.MediaUrl" class="w-100 rounded border border-secondary img-fluid" style="max-height: 180px; object-fit: cover;" alt="Evidence" />
+                                }
+                            </div>
+                        }
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="p-3 rounded border border-secondary bg-dark bg-opacity-20">
+                            <h4 class="text-white-50 fs-8 text-uppercase mb-2"><i class="fa-solid fa-microchip text-danger me-1"></i> AI Triage Metrics</h4>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Priority:</span>
+                                <span id="triagePriority" class="badge-priority badge-@Model.PriorityLevel.ToLowerInvariant()">@Model.PriorityLevel</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-muted">Risk Score:</span>
+                                <span class="h6 mb-0 text-white font-weight-bold"><span id="triageRisk">@Model.RiskScore</span>/100</span>
+                            </div>
+                            
+                            <hr class="border-secondary my-2" />
+                            
+                            <h4 class="text-white-50 fs-8 text-uppercase mt-2 mb-2"><i class="fa-solid fa-truck-medical text-primary me-1"></i> Dispatch Info</h4>
+                            <div class="dispatch-details">
+                                @if (assignment != null && assignment.RescueTeam != null)
+                                {
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-muted">Assigned Team:</span>
+                                        <span class="text-white font-weight-bold">@assignment.RescueTeam.TeamName</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center mb-1">
+                                        <span class="text-muted">Contact:</span>
+                                        <span class="text-white-50">@assignment.RescueTeam.ContactNumber</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="text-muted">Status:</span>
+                                        <span class="text-info" id="teamStatusText">En Route</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <span class="text-muted fs-8 italic" id="teamStatusText">Waiting for dispatcher allocation...</span>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System History logs -->
+        <div class="glass-card">
+            <div class="card-header-clean">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-clipboard-list text-primary me-2"></i> Operations Logs</h3>
+            </div>
+            <div class="card-body-clean" id="logList">
+                @foreach (var h in history)
+                {
+                    <div class="log-item d-flex mb-3">
+                        <div class="log-time text-muted me-3 fs-9" style="min-width: 80px;">@h.ChangedAt.ToLocalTime().ToString("HH:mm:ss")</div>
+                        <div class="log-details">
+                            <span class="badge bg-secondary me-2 fs-9">@h.Status</span>
+                            <span class="text-white-50 fs-8">@h.Notes</span>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Live Map Column -->
+    <div class="col-lg-5 mb-4">
+        <div class="glass-card h-100 card-body-clean d-flex flex-column">
+            <h3 class="h5 text-white mb-3"><i class="fa-solid fa-map-location-dot text-danger me-2"></i> Real-Time Emergency Radar</h3>
+            
+            <div class="mb-3 d-flex justify-content-between align-items-center p-2 rounded bg-dark bg-opacity-40 border border-secondary">
+                <span class="text-muted fs-8">Incident Coordinates:</span>
+                <span class="text-white-50 fs-8 font-monospace">@Model.Latitude.ToString("F5"), @Model.Longitude.ToString("F5")</span>
+            </div>
+
+            <div style="position: relative;" class="flex-grow-1 d-flex flex-column">
+                <div id="map" class="map-container flex-grow-1" style="min-height: 400px;"></div>
+                
+                <!-- Floating Map Quick Controls -->
+                <div class="map-floating-bar">
+                    <button type="button" class="map-tool-btn" id="btnTrackFocusIncident" title="Center on Incident Ground">
+                        <i class="fa-solid fa-crosshairs text-danger"></i> Incident Spot
+                    </button>
+                    <button type="button" class="map-tool-btn" id="btnTrackFocusTeam" title="Center on Rescue Team">
+                        <i class="fa-solid fa-truck-medical text-primary"></i> Rescue Team
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var reqId = @Model.Id;
+            var reqLat = parseFloat("@Model.Latitude");
+            var reqLng = parseFloat("@Model.Longitude");
+
+            var teamLat = null;
+            var teamLng = null;
+
+            @if (assignment != null && assignment.RescueTeam?.CurrentLatitude != null) {
+                <text>
+                teamLat = parseFloat("@assignment.RescueTeam.CurrentLatitude");
+                teamLng = parseFloat("@assignment.RescueTeam.CurrentLongitude");
+                </text>
+            }
+
+            // Initialize Map centered on Emergency location with smooth mouse interactions
+            var map = L.map('map', {
+                center: [reqLat, reqLng],
+                zoom: 14,
+                minZoom: 3,
+                maxZoom: 19,
+                scrollWheelZoom: true,
+                dragging: true
+            });
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            $('#btnTrackFocusIncident').click(function() {
+                map.setView([reqLat, reqLng], 15, { animate: true });
+                emergencyMarker.openPopup();
+            });
+
+            $('#btnTrackFocusTeam').click(function() {
+                if (teamMarker) {
+                    map.setView(teamMarker.getLatLng(), 15, { animate: true });
+                    teamMarker.openPopup();
+                } else {
+                    alert("Rescue team has not reported live GPS yet.");
+                }
+            });
+
+            // Red marker for Emergency
+            var emergencyIcon = L.divIcon({
+                html: '<div style="background: var(--accent-red); border: 2px solid #ffffff; width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px rgba(239,68,68,0.8);"></div>',
+                className: 'emergency-dot',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            });
+            var emergencyMarker = L.marker([reqLat, reqLng], { icon: emergencyIcon }).addTo(map)
+                .bindPopup("Your Reported Emergency Location").openPopup();
+
+            // Blue marker for Rescue Team (draw if available)
+            var teamMarker = null;
+            var routeLine = null;
+
+            function updateTeamOnMap(lat, lng) {
+                var teamIcon = L.divIcon({
+                    html: '<div style="background: var(--accent-blue); border: 2px solid #ffffff; width: 16px; height: 16px; border-radius: 50%; box-shadow: 0 0 12px rgba(59,130,246,0.8); display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-truck-medical" style="color:white; font-size:9px;"></i></div>',
+                    className: 'team-dot',
+                    iconSize: [16, 16],
+                    iconAnchor: [8, 8]
+                });
+
+                if (teamMarker) {
+                    teamMarker.setLatLng([lat, lng]);
+                } else {
+                    teamMarker = L.marker([lat, lng], { icon: teamIcon }).addTo(map)
+                        .bindPopup("Rescue Team En Route");
+                }
+
+                // Draw route connecting line
+                if (routeLine) {
+                    routeLine.setLatLngs([[reqLat, reqLng], [lat, lng]]);
+                } else {
+                    routeLine = L.polyline([[reqLat, reqLng], [lat, lng]], {
+                        color: 'var(--accent-blue)',
+                        weight: 3,
+                        dashArray: '5, 8',
+                        opacity: 0.7
+                    }).addTo(map);
+                }
+
+                // Adjust map bounds to show both
+                var group = new L.featureGroup([emergencyMarker, teamMarker]);
+                map.fitBounds(group.getBounds().pad(0.15));
+            }
+
+            if (teamLat && teamLng) {
+                updateTeamOnMap(teamLat, teamLng);
+            }
+
+            // SignalR Live Triggers
+            if (window.rescueHub) {
+                window.rescueHub.on("StatusUpdate", function(id, status, notes) {
+                    if (id === reqId) {
+                        console.log("Status Updated via SignalR:", status);
+                        
+                        // Add log item to Operations Logs
+                        var timeStr = new Date().toLocaleTimeString();
+                        var logHtml = `<div class="log-item d-flex mb-3 fade-in">
+                            <div class="log-time text-muted me-3 fs-9" style="min-width: 80px;">${timeStr}</div>
+                            <div class="log-details">
+                                <span class="badge bg-secondary me-2 fs-9">${status}</span>
+                                <span class="text-white-50 fs-8">${notes}</span>
+                            </div>
+                        </div>`;
+                        $('#logList').prepend(logHtml);
+
+                        // Highlight timeline steps
+                        var statuses = ["Created", "AI Analyzed", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress", "Resolved"];
+                        var stepIndex = statuses.indexOf(status);
+                        
+                        if (stepIndex !== -1) {
+                            $('[data-status-step]').each(function() {
+                                var stepName = $(this).attr('data-status-step');
+                                var index = statuses.indexOf(stepName);
+                                var iconContainer = $(this).find('.timeline-step-icon');
+
+                                $(this).removeClass('active completed');
+                                
+                                if (status === 'Resolved' || index < stepIndex) {
+                                    $(this).addClass('completed');
+                                    iconContainer.html('<i class="fa-solid fa-check"></i>');
+                                } else if (index === stepIndex) {
+                                    $(this).addClass('active');
+                                    iconContainer.html(index + 1);
+                                } else {
+                                    iconContainer.html(index + 1);
+                                }
+                            });
+                        }
+
+                        // Special UI updates based on status
+                        if (status === "AI Analyzed") {
+                            // Fetch priority & score from notes parse
+                            // Notes format: "AI Analysis complete. Priority: High, Risk Score: 60/100."
+                            var pMatch = notes.match(/Priority:\s*(\w+)/);
+                            var sMatch = notes.match(/Risk Score:\s*(\d+)/);
+                            
+                            if (pMatch && pMatch[1]) {
+                                $('#triagePriority').text(pMatch[1])
+                                    .attr('class', 'badge-priority badge-' + pMatch[1].toLowerCase());
+                            }
+                            if (sMatch && sMatch[1]) {
+                                $('#triageRisk').text(sMatch[1]);
+                            }
+                        }
+
+                        if (status === "Assigned") {
+                            // Reload page to fetch dispatch team details
+                            setTimeout(function() { window.location.reload(); }, 2000);
+                        }
+
+                        if (status === "Resolved") {
+                            $('#teamStatusText').text("Resolved").attr('class', 'text-success');
+                            if (teamMarker) {
+                                teamMarker.bindPopup("Emergency Resolved! Rescue Crew Completed Operation.").openPopup();
+                            }
+                        }
+                    }
+                });
+
+                window.rescueHub.on("TeamLocationUpdate", function(tId, rId, lat, lng, tStatus) {
+                    if (rId === reqId) {
+                        console.log("Team Location Received via SignalR:", lat, lng);
+                        updateTeamOnMap(lat, lng);
+                        $('#teamStatusText').text("En Route (Live GPS tracking)").attr('class', 'text-info pulse-slow');
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,291 @@
+@model RescueTeamDashboardViewModel
+@{
+    ViewData["Title"] = $"Rescue Ops: {Model.Team.TeamName}";
+}
+
+<div class="row fade-in">
+    <!-- Left Column: Command & Operations -->
+    <div class="col-lg-6 mb-4">
+        <!-- Team Status Card -->
+        <div class="glass-card mb-4">
+            <div class="card-header-clean bg-dark bg-opacity-35 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 text-white mb-0"><i class="fa-solid fa-people-group text-primary me-2"></i> @Model.Team.TeamName</h2>
+                    <p class="text-muted fs-9 mb-0">Hotline: @Model.Team.ContactNumber</p>
+                </div>
+                <div>
+                    @if (Model.Team.Status == "Available")
+                    {
+                        <span class="badge bg-success text-uppercase py-2 px-3 fs-9">Available for Dispatch</span>
+                    }
+                    else if (Model.Team.Status == "Busy")
+                    {
+                        <span class="badge bg-danger text-uppercase py-2 px-3 fs-9">Busy on Operation</span>
+                    }
+                    else
+                    {
+                        <span class="badge bg-secondary text-uppercase py-2 px-3 fs-9">Offline</span>
+                    }
+                </div>
+            </div>
+            
+            <div class="card-body-clean">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="text-white-50">Toggle Duty Status:</span>
+                    <div class="d-flex gap-2">
+                        <form asp-controller="RescueTeam" asp-action="ToggleTeamStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="status" value="Available" />
+                            <button type="submit" class="btn btn-sm btn-outline-success @(Model.Team.Status == "Available" ? "active" : "")">Available</button>
+                        </form>
+                        <form asp-controller="RescueTeam" asp-action="ToggleTeamStatus" method="post">
+                            @Html.AntiForgeryToken()
+                            <input type="hidden" name="status" value="Offline" />
+                            <button type="submit" class="btn btn-sm btn-outline-secondary @(Model.Team.Status == "Offline" ? "active" : "")">Offline</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Active Operations Card -->
+        <div class="glass-card mb-4">
+            <div class="card-header-clean bg-danger bg-opacity-5">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-truck-fire text-danger me-2"></i> Current Emergency Task</h3>
+            </div>
+            <div class="card-body-clean">
+                @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
+                {
+                    var req = Model.ActiveAssignment.EmergencyRequest;
+                    
+                    <div class="p-3 mb-3 rounded border border-danger border-opacity-15 bg-danger bg-opacity-5">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <h4 class="h5 text-white">@req.EmergencyType Incident</h4>
+                            <span class="badge-priority badge-@req.PriorityLevel.ToLowerInvariant()">@req.PriorityLevel Priority</span>
+                        </div>
+                        <p class="text-white-50 fs-8 mb-3">"@req.Description"</p>
+                        
+                        <div class="row fs-9 text-muted mb-3">
+                            <div class="col-6">
+                                <span class="d-block">Citizen Contact:</span>
+                                <span class="text-white font-weight-bold">@req.Citizen?.FullName</span>
+                            </div>
+                            <div class="col-6">
+                                <span class="d-block">Report Location:</span>
+                                <span class="text-white font-weight-bold font-monospace">@req.Latitude.ToString("F4"), @req.Longitude.ToString("F4")</span>
+                            </div>
+                        </div>
+
+                        <!-- Current Assignment State Actions -->
+                        <div class="border-top border-secondary border-opacity-20 pt-3">
+                            <span class="text-muted d-block fs-9 mb-2">OPERATIONAL DISPATCH STAGE:</span>
+                            <h5 class="h6 text-white mb-3">
+                                Status: <span class="text-danger font-weight-bold" id="operationStatus">@req.Status</span>
+                            </h5>
+
+                            <div class="action-buttons-group">
+                                @if (Model.ActiveAssignment.Status == "Assigned")
+                                {
+                                    <form asp-controller="RescueTeam" asp-action="Accept" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.Id" />
+                                        <button type="submit" class="btn btn-premium-primary w-100">
+                                            <i class="fa-solid fa-check me-1"></i> Accept Dispatch Request
+                                        </button>
+                                    </form>
+                                }
+                                else if (Model.ActiveAssignment.Status == "Accepted")
+                                {
+                                    <form asp-controller="RescueTeam" asp-action="StartSimulation" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.Id" />
+                                        <input type="hidden" name="teamId" value="@Model.Team.Id" />
+                                        <button type="submit" class="btn btn-premium-danger w-100">
+                                            <i class="fa-solid fa-route me-1"></i> Depart (Simulate En Route)
+                                        </button>
+                                    </form>
+                                }
+                                else if (Model.ActiveAssignment.Status == "OnTheWay" && req.Status != "Rescue In Progress")
+                                {
+                                    <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-white-50 fs-8 mb-0">
+                                        <i class="fa-solid fa-spinner fa-spin me-1"></i> En route to location. GPS route is simulating... (Arrives automatically in 15 seconds)
+                                    </div>
+                                }
+                                else if (Model.ActiveAssignment.Status == "InProgress" || req.Status == "Rescue In Progress")
+                                {
+                                    <form asp-controller="RescueTeam" asp-action="UpdateStatus" method="post">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="requestId" value="@req.Id" />
+                                        <input type="hidden" name="status" value="Resolved" />
+                                        <input type="hidden" name="notes" value="Emergency successfully resolved. All citizens accounted for." />
+                                        <button type="submit" class="btn btn-premium-success w-100">
+                                            <i class="fa-solid fa-circle-check me-1"></i> Mark Incident as Resolved
+                                        </button>
+                                    </form>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4 text-muted border border-dashed border-secondary rounded">
+                        <i class="fa-solid fa-clock fa-2x mb-2 text-white-50"></i>
+                        <p class="mb-0 fs-8">Standby Mode. Waiting for Command Center dispatch assign.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Navigation Map or Alert list -->
+    <div class="col-lg-6 mb-4">
+        @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
+        {
+            var req = Model.ActiveAssignment.EmergencyRequest;
+            <div class="glass-card h-100 card-body-clean d-flex flex-column">
+                <h3 class="h5 text-white mb-3"><i class="fa-solid fa-location-arrow text-primary me-2"></i> Rescue Navigation Map</h3>
+                <div id="navMap" class="map-container flex-grow-1" style="min-height: 420px;"></div>
+            </div>
+        }
+        else
+        {
+            <!-- Display Unassigned cases -->
+            <div class="glass-card h-100">
+                <div class="card-header-clean bg-dark bg-opacity-35">
+                    <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-clipboard-list text-warning me-2"></i> Global Crisis Queue</h3>
+                </div>
+                <div class="card-body-clean">
+                    @if (Model.UnassignedEmergencies.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table custom-table">
+                                <thead>
+                                    <tr>
+                                        <th>Type</th>
+                                        <th>Priority</th>
+                                        <th>Reported</th>
+                                        <th>Distance</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var u in Model.UnassignedEmergencies)
+                                    {
+                                        var dist = Model.Team.CurrentLatitude.HasValue && Model.Team.CurrentLongitude.HasValue ?
+                                                   (double?)new TeamAssignmentService(null!).CalculateDistance(u.Latitude, u.Longitude, Model.Team.CurrentLatitude.Value, Model.Team.CurrentLongitude.Value) :
+                                                   null;
+                                        <tr>
+                                            <td class="text-white font-weight-bold">@u.EmergencyType</td>
+                                            <td>
+                                                <span class="badge-priority badge-@u.PriorityLevel.ToLowerInvariant()">@u.PriorityLevel</span>
+                                            </td>
+                                            <td class="text-white-50 fs-9">@u.CreatedAt.ToLocalTime().ToString("t")</td>
+                                            <td class="text-info fs-8">@(dist.HasValue ? $"{dist.Value:F1} km" : "N/A")</td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-circle-check text-success fa-2x mb-2"></i>
+                            <p class="mb-0 fs-8">No active emergencies found in the queue.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
+    {
+        var req = Model.ActiveAssignment.EmergencyRequest;
+        var startLat = Model.Team.CurrentLatitude ?? 23.0225m;
+        var startLng = Model.Team.CurrentLongitude ?? 72.5714m;
+        
+        <script>
+            $(document).ready(function() {
+                var reqId = @req.Id;
+                var teamId = @Model.Team.Id;
+                var destLat = parseFloat("@req.Latitude");
+                var destLng = parseFloat("@req.Longitude");
+
+                var curLat = parseFloat("@startLat");
+                var curLng = parseFloat("@startLng");
+
+                // Initialize Navigation Map
+                var map = L.map('navMap', {
+                    center: [curLat, curLng],
+                    zoom: 14,
+                    minZoom: 3,
+                    maxZoom: 19,
+                    scrollWheelZoom: true,
+                    dragging: true
+                });
+
+                L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                    maxZoom: 19
+                }).addTo(map);
+
+                // Emergency Target Marker (Red)
+                var destIcon = L.divIcon({
+                    html: '<div style="background: var(--accent-red); border: 2px solid #ffffff; width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px rgba(239,68,68,0.8);"></div>',
+                    className: 'dest-dot',
+                    iconSize: [14, 14],
+                    iconAnchor: [7, 7]
+                });
+                var destMarker = L.marker([destLat, destLng], { icon: destIcon }).addTo(map)
+                    .bindPopup("Emergency Ground Location").openPopup();
+
+                // Rescue Team Marker (Blue)
+                var teamIcon = L.divIcon({
+                    html: '<div style="background: var(--accent-blue); border: 2px solid #ffffff; width: 18px; height: 18px; border-radius: 50%; box-shadow: 0 0 12px rgba(59,130,246,0.8); display:flex; align-items:center; justify-content:center;"><i class="fa-solid fa-truck-medical" style="color:white; font-size:10px;"></i></div>',
+                    className: 'team-dot',
+                    iconSize: [18, 18],
+                    iconAnchor: [9, 9]
+                });
+                var teamMarker = L.marker([curLat, curLng], { icon: teamIcon }).addTo(map)
+                    .bindPopup("Your Location");
+
+                // Route path line
+                var routeLine = L.polyline([[curLat, curLng], [destLat, destLng]], {
+                    color: 'var(--accent-blue)',
+                    weight: 3,
+                    dashArray: '5, 8',
+                    opacity: 0.7
+                }).addTo(map);
+
+                // Fit map boundary
+                var bounds = new L.featureGroup([destMarker, teamMarker]);
+                map.fitBounds(bounds.getBounds().pad(0.2));
+
+                // SignalR update bindings
+                if (window.rescueHub) {
+                    window.rescueHub.on("TeamLocationUpdate", function(tId, rId, lat, lng, status) {
+                        if (tId === teamId && rId === reqId) {
+                            console.log("Simulated location received:", lat, lng);
+                            teamMarker.setLatLng([lat, lng]);
+                            routeLine.setLatLngs([[lat, lng], [destLat, destLng]]);
+                        }
+                    });
+
+                    window.rescueHub.on("StatusUpdate", function(id, status, notes) {
+                        if (id === reqId) {
+                            console.log("Status update received:", status);
+                            $('#operationStatus').text(status);
+                            if (status === "Rescue In Progress" || status === "Resolved") {
+                                // Reload dashboard state to display current correct options
+                                setTimeout(function() { window.location.reload(); }, 1500);
+                            }
+                        }
+                    });
+                }
+            });
+        </script>
+    }
+}

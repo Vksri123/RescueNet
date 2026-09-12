@@ -1,0 +1,165 @@
+@model EmergencyRequest
+@{
+    ViewData["Title"] = $"Incident Details #{Model.Id}";
+    var history = ViewBag.History as List<EmergencyStatusHistory> ?? new List<EmergencyStatusHistory>();
+    var assignment = ViewBag.Assignment as EmergencyAssignment;
+}
+
+<div class="row fade-in">
+    <div class="col-lg-8 mb-4">
+        <div class="glass-card mb-4">
+            <div class="card-header-clean bg-dark bg-opacity-40 d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="h4 text-white mb-0">Emergency Incident File #@Model.Id</h2>
+                    <p class="text-muted fs-9 mb-0">Logged: @Model.CreatedAt.ToLocalTime().ToString("g")</p>
+                </div>
+                <span class="badge-priority badge-@Model.PriorityLevel.ToLowerInvariant()">@Model.PriorityLevel Priority</span>
+            </div>
+            
+            <div class="card-body-clean">
+                <div class="row g-4">
+                    <div class="col-md-7">
+                        <h4 class="text-white-50 fs-8 text-uppercase">Citizen Statement</h4>
+                        <p class="text-white fs-6">"@Model.Description"</p>
+                        
+                        <h4 class="text-white-50 fs-8 text-uppercase mt-4">AI Risk Triage Summary</h4>
+                        <div class="p-3 rounded border border-secondary bg-dark bg-opacity-20 mt-2">
+                            <div class="row text-center">
+                                <div class="col-6 border-end border-secondary">
+                                    <span class="text-muted d-block fs-9 text-uppercase">Risk Score</span>
+                                    <span class="h4 text-danger font-weight-bold">@Model.RiskScore%</span>
+                                </div>
+                                <div class="col-6">
+                                    <span class="text-muted d-block fs-9 text-uppercase">Triage Status</span>
+                                    <span class="h5 text-white">@Model.Status</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-5">
+                        @if (!string.IsNullOrEmpty(Model.MediaUrl))
+                        {
+                            <h4 class="text-white-50 fs-8 text-uppercase mb-2">Evidence Attachment</h4>
+                            @if (Model.MediaUrl.EndsWith(".mp4") || Model.MediaUrl.EndsWith(".mov"))
+                            {
+                                <video src="@Model.MediaUrl" controls class="w-100 rounded border border-secondary" style="max-height: 220px; object-fit: cover;"></video>
+                            }
+                            else
+                            {
+                                <img src="@Model.MediaUrl" class="w-100 rounded border border-secondary img-fluid" style="max-height: 220px; object-fit: cover;" alt="Incident Evidence" />
+                            }
+                        }
+                        else
+                        {
+                            <div class="border border-dashed border-secondary rounded p-4 text-center text-muted fs-8 h-100 d-flex flex-column align-items-center justify-content-center">
+                                <i class="fa-solid fa-image fa-2x mb-2 text-white-50"></i>
+                                No evidence files attached.
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Log Card -->
+        <div class="glass-card">
+            <div class="card-header-clean">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i> Timeline Operations Log</h3>
+            </div>
+            <div class="card-body-clean">
+                <div class="timeline-logs">
+                    @foreach (var log in history)
+                    {
+                        <div class="d-flex mb-3 border-bottom border-secondary pb-3 border-opacity-15">
+                            <div class="text-muted fs-8 font-monospace me-3" style="min-width: 90px;">@log.ChangedAt.ToLocalTime().ToString("g")</div>
+                            <div>
+                                <span class="badge bg-secondary fs-9 me-2">@log.Status</span>
+                                <p class="mb-0 text-white-50 fs-8">@log.Notes</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column Sidebar Info -->
+    <div class="col-lg-4">
+        <!-- Map Card -->
+        <div class="glass-card mb-4">
+            <div class="card-header-clean">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-earth-americas text-primary me-2"></i> Geospatial Vector</h3>
+            </div>
+            <div class="card-body-clean">
+                <div id="detailMap" class="map-container mb-3" style="height: 250px;"></div>
+                <div class="d-flex justify-content-between text-muted fs-9 font-monospace">
+                    <span>Lat: @Model.Latitude.ToString("F6")</span>
+                    <span>Lng: @Model.Longitude.ToString("F6")</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Team Assignment status card -->
+        <div class="glass-card">
+            <div class="card-header-clean">
+                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-truck-medical text-success me-2"></i> Team Allocation</h3>
+            </div>
+            <div class="card-body-clean">
+                @if (assignment != null && assignment.RescueTeam != null)
+                {
+                    <div class="p-3 rounded border border-success border-opacity-20 bg-success bg-opacity-5">
+                        <h4 class="h6 text-success mb-2">@assignment.RescueTeam.TeamName</h4>
+                        <div class="mb-2 fs-8">
+                            <span class="text-muted d-block">Hotline:</span>
+                            <span class="text-white">@assignment.RescueTeam.ContactNumber</span>
+                        </div>
+                        <div class="mb-2 fs-8">
+                            <span class="text-muted d-block">Dispatch State:</span>
+                            <span class="badge bg-info">@assignment.Status</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-warning bg-warning bg-opacity-10 border-warning border-opacity-20 text-warning-50 fs-8 mb-0">
+                        <i class="fa-solid fa-triangle-exclamation me-1"></i> No rescue crew has been allocated yet. Use Command Console to dispatch.
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            var lat = parseFloat("@Model.Latitude");
+            var lng = parseFloat("@Model.Longitude");
+
+            var map = L.map('detailMap', {
+                center: [lat, lng],
+                zoom: 14,
+                minZoom: 3,
+                maxZoom: 19,
+                scrollWheelZoom: true,
+                dragging: true
+            });
+
+            L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+
+            var icon = L.divIcon({
+                html: '<div style="background: var(--accent-red); border: 2px solid #ffffff; width: 14px; height: 14px; border-radius: 50%; box-shadow: 0 0 10px rgba(239,68,68,0.8);"></div>',
+                className: 'emergency-dot',
+                iconSize: [14, 14],
+                iconAnchor: [7, 7]
+            });
+
+            L.marker([lat, lng], { icon: icon }).addTo(map)
+                .bindPopup("Incident Ground").openPopup();
+        });
+    </script>
+}

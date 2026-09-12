@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - RescueNet</title>
+    
+    <!-- Modern Typography & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- Leaflet.js Mapping CSS (Loaded globally for mapping features) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/ResuceNet.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-dark-glass fixed-top">
+            <div class="container">
+                <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                    <div class="brand-logo-container me-2">
+                        <i class="fa-solid fa-truck-medical text-danger pulse-slow"></i>
+                    </div>
+                    <span class="brand-text">Rescue<span class="text-danger font-weight-bold">Net</span></span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
+                        aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Admin" asp-action="Dashboard">
+                                        <i class="fa-solid fa-chalkboard-user me-1"></i> Control Center
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "CompletedRequests" ? "active" : "")" asp-controller="Admin" asp-action="CompletedRequests">
+                                        <i class="fa-solid fa-box-archive me-1"></i> Completed Requests
+                                    </a>
+                                </li>
+                            }
+                            else if (User.IsInRole("RescueTeam"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "RescueTeam" ? "active" : "")" asp-controller="RescueTeam" asp-action="Dashboard">
+                                        <i class="fa-solid fa-house-medical me-1"></i> Team Dashboard
+                                    </a>
+                                </li>
+                            }
+                            else // Citizen
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Emergency" && ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")" asp-controller="Emergency" asp-action="Create">
+                                        <i class="fa-solid fa-kit-medical me-1"></i> File Emergency
+                                    </a>
+                                </li>
+                            }
+                        }
+                    </ul>
+                    
+                    <ul class="navbar-nav">
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="user-avatar me-2">
+                                        <i class="fa-solid fa-circle-user fa-lg"></i>
+                                    </div>
+                                    <span>@User.FindFirst("FullName")?.Value</span>
+                                    <span class="badge bg-secondary ms-2 text-uppercase fs-9">@User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value</span>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end fade-in" aria-labelledby="navbarDropdown">
+                                    <li>
+                                        <form asp-controller="Account" asp-action="Logout" method="post" id="logoutForm" class="d-inline">
+                                            <button type="submit" class="dropdown-item text-danger d-flex align-items-center">
+                                                <i class="fa-solid fa-right-from-bracket me-2"></i> Sign Out
+                                            </button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        else
+                        {
+                            <li class="nav-item me-2">
+                                <a class="btn btn-outline-light nav-btn btn-sm px-3" asp-controller="Account" asp-action="Login">
+                                    <i class="fa-solid fa-right-to-bracket me-1"></i> Log In
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="btn btn-danger nav-btn btn-sm px-3" asp-controller="Account" asp-action="Register">
+                                    <i class="fa-solid fa-user-plus me-1"></i> Register
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="main-content-wrapper">
+        <main role="main" class="container">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="footer mt-auto py-3 bg-dark text-white border-top border-secondary">
+        <div class="container text-center">
+            <span class="text-muted">&copy; 2026 - RescueNet Emergency System. Designed for life-saving efficiency.</span>
+        </div>
+    </footer>
+
+    <!-- Core JS dependencies -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Leaflet Mapping Library JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script>
+        if (typeof L !== 'undefined') {
+            delete L.Icon.Default.prototype._getIconUrl;
+            L.Icon.Default.mergeOptions({
+                iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+                iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+                shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            });
+        }
+    </script>
+    
+    <!-- SignalR JS Client Library (CDN) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    
+    <!-- Global Emergency Broadcast Alert Modal -->
+    <div class="modal fade" id="globalSMSAlertModal" tabindex="-1" aria-hidden="true" style="backdrop-filter: blur(10px); z-index: 1060;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content glass-card border border-danger shadow-lg" style="background: rgba(239, 68, 68, 0.95); color: #ffffff;">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title font-weight-bold text-white"><i class="fa-solid fa-triangle-exclamation fa-lg me-2 pulse-slow"></i> EMERGENCY BROADCAST ALERT</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body py-4">
+                    <p class="fs-6 mb-3 text-white" id="globalSMSAlertMessage" style="font-weight: 500;"></p>
+                    <div class="d-flex justify-content-between align-items-center fs-8 text-white-50 border-top border-white border-opacity-25 pt-2">
+                        <span><i class="fa-solid fa-mobile-screen me-1"></i> Broadcast SMS Alert</span>
+                        <span id="globalSMSAlertTime" class="font-monospace"></span>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-light btn-sm text-danger font-weight-bold px-4" data-bs-dismiss="modal">Acknowledge Alert</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    
+    <script>
+        $(document).ready(function() {
+            if (window.rescueHub) {
+                window.rescueHub.on("SMSAlertReceived", function(msg, role, timeStr) {
+                    $('#globalSMSAlertMessage').text(msg);
+                    $('#globalSMSAlertTime').text(timeStr || new Date().toLocaleTimeString());
+                    var modal = new bootstrap.Modal(document.getElementById('globalSMSAlertModal'));
+                    modal.show();
+                });
+            }
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
