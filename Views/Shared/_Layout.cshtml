@@ -19,13 +19,13 @@
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark-glass fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light bg-light-glass fixed-top border-bottom border-light">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
                     <div class="brand-logo-container me-2">
                         <i class="fa-solid fa-truck-medical text-danger pulse-slow"></i>
                     </div>
-                    <span class="brand-text">Rescue<span class="text-danger font-weight-bold">Net</span></span>
+                    <span class="brand-text text-dark font-weight-bold">Rescue<span class="text-danger">Net</span></span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
                         aria-expanded="false" aria-label="Toggle navigation">
@@ -92,12 +92,12 @@
                         else
                         {
                             <li class="nav-item me-2">
-                                <a class="btn btn-outline-light nav-btn btn-sm px-3" asp-controller="Account" asp-action="Login">
+                                <a class="btn btn-outline-primary nav-btn btn-sm px-3 font-weight-bold" asp-controller="Account" asp-action="Login">
                                     <i class="fa-solid fa-right-to-bracket me-1"></i> Log In
                                 </a>
                             </li>
                             <li class="nav-item">
-                                <a class="btn btn-danger nav-btn btn-sm px-3" asp-controller="Account" asp-action="Register">
+                                <a class="btn btn-danger nav-btn btn-sm px-3 text-white font-weight-bold" asp-controller="Account" asp-action="Register">
                                     <i class="fa-solid fa-user-plus me-1"></i> Register
                                 </a>
                             </li>
@@ -114,9 +114,9 @@
         </main>
     </div>
 
-    <footer class="footer mt-auto py-3 bg-dark text-white border-top border-secondary">
+    <footer class="footer mt-auto py-3 bg-white text-muted border-top">
         <div class="container text-center">
-            <span class="text-muted">&copy; 2026 - RescueNet Emergency System. Designed for life-saving efficiency.</span>
+            <span class="text-secondary fs-8">&copy; 2026 - <strong>RescueNet</strong> &bull; Smart Disaster Response System &bull; Dedicated to saving lives in any disaster.</span>
         </div>
     </footer>
 
