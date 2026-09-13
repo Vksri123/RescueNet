@@ -17,14 +17,12 @@
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ResuceNet.styles.css" asp-append-version="true" />
 </head>
-<body>
+<body class="d-flex flex-column min-vh-100">
     <header>
         <nav class="navbar navbar-expand-lg navbar-light bg-light-glass fixed-top border-bottom border-light">
             <div class="container">
                 <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
-                    <div class="brand-logo-container me-2">
-                        <i class="fa-solid fa-truck-medical text-danger pulse-slow"></i>
-                    </div>
+                    <img src="~/images/rescuenet_logo_shield.jpg" alt="RescueNet Shield Logo" class="brand-logo-img me-2" />
                     <span class="brand-text text-dark font-weight-bold">Rescue<span class="text-danger">Net</span></span>
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav"
@@ -40,6 +38,11 @@
                                 <li class="nav-item">
                                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Admin" asp-action="Dashboard">
                                         <i class="fa-solid fa-chalkboard-user me-1"></i> Control Center
+                                    </a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Admin" && ViewContext.RouteData.Values["action"]?.ToString() == "RescueTeams" ? "active" : "")" asp-controller="Admin" asp-action="RescueTeams">
+                                        <i class="fa-solid fa-people-group me-1"></i> Manage Rescue Teams
                                     </a>
                                 </li>
                                 <li class="nav-item">
@@ -108,15 +111,22 @@
         </nav>
     </header>
 
-    <div class="main-content-wrapper">
-        <main role="main" class="container">
+    <div class="main-content-wrapper flex-grow-1">
+        <main role="main" class="container pb-4">
             @RenderBody()
         </main>
     </div>
 
-    <footer class="footer mt-auto py-3 bg-white text-muted border-top">
-        <div class="container text-center">
+    <footer class="footer mt-auto py-3 bg-white text-muted border-top" style="position: relative; z-index: 1050;">
+        <div class="container d-flex justify-content-between align-items-center flex-wrap gap-2">
             <span class="text-secondary fs-8">&copy; 2026 - <strong>RescueNet</strong> &bull; Smart Disaster Response System &bull; Dedicated to saving lives in any disaster.</span>
+            <div>
+                <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-bold shadow-xs rounded-pill d-inline-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#presentationModal">
+                    <i class="fa-solid fa-photo-film text-warning"></i>
+                    <span>Project Presentation Showcase</span>
+                    <span class="badge bg-white text-danger rounded-pill px-2 py-0 fs-9 fw-bold">2 Slides</span>
+                </button>
+            </div>
         </div>
     </footer>
 
@@ -162,16 +172,218 @@
         </div>
     </div>
 
+    <!-- SweetAlert2 Library (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
     <script src="~/js/site.js" asp-append-version="true"></script>
     
     <script>
         $(document).ready(function() {
+            @if (TempData["Success"] != null)
+            {
+                <text>
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Success',
+                    text: '@Html.Raw(TempData["Success"]?.ToString())',
+                    confirmButtonColor: '#16a34a',
+                    timer: 3500,
+                    timerProgressBar: true
+                });
+                </text>
+            }
+            @if (TempData["Error"] != null)
+            {
+                <text>
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Notice',
+                    text: '@Html.Raw(TempData["Error"]?.ToString())',
+                    confirmButtonColor: '#dc2626'
+                });
+                </text>
+            }
+
             if (window.rescueHub) {
                 window.rescueHub.on("SMSAlertReceived", function(msg, role, timeStr) {
                     $('#globalSMSAlertMessage').text(msg);
                     $('#globalSMSAlertTime').text(timeStr || new Date().toLocaleTimeString());
                     var modal = new bootstrap.Modal(document.getElementById('globalSMSAlertModal'));
                     modal.show();
+                });
+            }
+        });
+
+        // Global SweetAlert2 delete confirmation helper
+        function confirmDeleteWithSwal(event, itemName) {
+            event.preventDefault();
+            var form = event.target.closest('form');
+            Swal.fire({
+                title: 'Are you sure?',
+                text: itemName ? 'Permanently delete \'' + itemName + '\'? This action cannot be undone.' : 'This action cannot be undone.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#dc2626',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: 'Yes, Delete',
+                cancelButtonText: 'Cancel'
+            }).then(function(result) {
+                if (result.isConfirmed) {
+                    form.submit();
+                }
+            });
+            return false;
+        }
+    </script>
+
+    <!-- Global Full-Screen Presentation Showcase Modal (Swapped Slide Order: Slide 1 = Mission & Thanks; Slide 2 = Team Showcase) -->
+    <div class="modal fade" id="presentationModal" tabindex="-1" aria-labelledby="presentationModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-fullscreen">
+            <div class="modal-content border-0 bg-black text-white">
+                <!-- Modal Header -->
+                <div class="modal-header bg-dark text-white px-4 py-2 d-flex justify-content-between align-items-center border-bottom border-secondary border-opacity-25">
+                    <div class="d-flex align-items-center gap-3">
+                        <img src="~/images/rescuenet_logo_shield.jpg" alt="RescueNet Shield Logo" class="brand-logo-img" style="width: 34px; height: 34px;" />
+                        <div>
+                            <h5 class="modal-title fw-bold mb-0 text-white fs-6" id="presentationModalLabel">RescueNet &bull; Smart Disaster Response Presentation</h5>
+                            <small class="text-white-50 fs-9" id="slideIndicatorText">Slide 1 of 2: Because Every Life Matters &bull; Mission Showcase</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3" id="btnFullscreenToggle" title="Toggle Browser Fullscreen">
+                            <i class="fa-solid fa-expand me-1"></i> Fullscreen
+                        </button>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <!-- Modal Body with Full-Screen Carousel -->
+                <div class="modal-body p-0 bg-black position-relative d-flex align-items-center justify-content-center overflow-hidden">
+                    <div id="presentationCarousel" class="carousel slide w-100 h-100" data-bs-ride="false" data-bs-interval="false">
+                        <div class="carousel-inner w-100 h-100">
+                            <!-- Slide 1 (Swapped to First): Mission & Thanks Showcase (16:9 Widescreen) -->
+                            <div class="carousel-item active w-100 h-100 text-center">
+                                <div class="presentation-slide-wrapper">
+                                    <img src="~/images/presentation_mission_widescreen.jpg" class="presentation-img img-fluid" alt="RescueNet Because Every Life Matters Showcase 16:9" />
+                                </div>
+                            </div>
+                            <!-- Slide 2 (Swapped to Second): Team Showcase (16:9 Widescreen) -->
+                            <div class="carousel-item w-100 h-100 text-center">
+                                <div class="presentation-slide-wrapper">
+                                    <img src="~/images/presentation_team_widescreen.jpg" class="presentation-img img-fluid" alt="RescueNet Team Dedication Showcase 16:9" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Slide Floating Nav Arrows -->
+                        <button class="carousel-control-prev" type="button" data-bs-target="#presentationCarousel" data-bs-slide="prev" style="width: 5%;">
+                            <span class="carousel-control-prev-icon bg-dark bg-opacity-75 rounded-circle p-3" aria-hidden="true"></span>
+                            <span class="visually-hidden">Previous</span>
+                        </button>
+                        <button class="carousel-control-next" type="button" data-bs-target="#presentationCarousel" data-bs-slide="next" style="width: 5%;">
+                            <span class="carousel-control-next-icon bg-dark bg-opacity-75 rounded-circle p-3" aria-hidden="true"></span>
+                            <span class="visually-hidden">Next</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Modal Footer Controls -->
+                <div class="modal-footer bg-dark border-top border-secondary border-opacity-25 px-4 py-2 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                    <button type="button" class="btn btn-outline-light btn-sm px-3 py-1 fw-semibold" id="btnPrevSlideBottom">
+                        <i class="fa-solid fa-chevron-left me-1"></i> Previous Slide
+                    </button>
+
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary rounded-pill px-3 py-1 fw-bold" id="btnGoSlide1">
+                            <i class="fa-solid fa-heart-pulse me-1"></i> Slide 1: Every Life Matters
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-light rounded-pill px-3 py-1 fw-bold" id="btnGoSlide2">
+                            <i class="fa-solid fa-users me-1"></i> Slide 2: Team Showcase
+                        </button>
+                    </div>
+
+                    <button type="button" class="btn btn-danger btn-sm px-3 py-1 fw-semibold" id="btnNextSlideBottom">
+                        Next Slide <i class="fa-solid fa-chevron-right ms-1"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        $(document).ready(function () {
+            var carouselEl = document.getElementById('presentationCarousel');
+            if (carouselEl && typeof bootstrap !== 'undefined') {
+                var carousel = new bootstrap.Carousel(carouselEl, {
+                    interval: false,
+                    wrap: true
+                });
+
+                function updateSlideInfo(slideIndex) {
+                    if (slideIndex === 0) {
+                        $('#slideIndicatorText').html('Slide 1 of 2: Because Every Life Matters &bull; Mission Showcase');
+                        $('#btnGoSlide1').removeClass('btn-outline-light').addClass('btn-primary');
+                        $('#btnGoSlide2').removeClass('btn-primary').addClass('btn-outline-light');
+                    } else {
+                        $('#slideIndicatorText').text('Slide 2 of 2: Team Dedication & Collaboration');
+                        $('#btnGoSlide2').removeClass('btn-outline-light').addClass('btn-primary');
+                        $('#btnGoSlide1').removeClass('btn-primary').addClass('btn-outline-light');
+                    }
+                }
+
+                carouselEl.addEventListener('slide.bs.carousel', function (e) {
+                    updateSlideInfo(e.to);
+                });
+
+                $('#btnPrevSlideBottom').on('click', function () {
+                    carousel.prev();
+                });
+
+                $('#btnNextSlideBottom').on('click', function () {
+                    carousel.next();
+                });
+
+                $('#btnGoSlide1').on('click', function () {
+                    carousel.to(0);
+                });
+
+                $('#btnGoSlide2').on('click', function () {
+                    carousel.to(1);
+                });
+
+                // Keyboard arrow navigation when presentation modal is open
+                $(document).on('keydown', function (e) {
+                    if ($('#presentationModal').hasClass('show')) {
+                        if (e.key === 'ArrowLeft') {
+                            carousel.prev();
+                        } else if (e.key === 'ArrowRight') {
+                            carousel.next();
+                        }
+                    }
+                });
+
+                // Fullscreen toggle
+                $('#btnFullscreenToggle').on('click', function () {
+                    var modalEl = document.getElementById('presentationModal');
+                    if (!document.fullscreenElement) {
+                        if (modalEl.requestFullscreen) {
+                            modalEl.requestFullscreen();
+                        } else if (modalEl.webkitRequestFullscreen) {
+                            modalEl.webkitRequestFullscreen();
+                        }
+                        $(this).html('<i class="fa-solid fa-compress me-1"></i> Exit');
+                    } else {
+                        if (document.exitFullscreen) {
+                            document.exitFullscreen();
+                        }
+                        $(this).html('<i class="fa-solid fa-expand me-1"></i> Fullscreen');
+                    }
+                });
+
+                document.addEventListener('fullscreenchange', function () {
+                    if (!document.fullscreenElement) {
+                        $('#btnFullscreenToggle').html('<i class="fa-solid fa-expand me-1"></i> Fullscreen');
+                    }
                 });
             }
         });

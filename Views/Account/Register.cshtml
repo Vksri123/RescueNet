@@ -8,7 +8,7 @@
         <div class="glass-card">
             <div class="card-header-clean text-center">
                 <i class="fa-solid fa-user-plus text-danger fa-2.5x mb-3 pulse-slow"></i>
-                <h2 class="h3 text-white">Create Response Account</h2>
+                <h2 class="h3 text-dark fw-bold">Create Response Account</h2>
                 <p class="text-muted mb-0">Join the RescueNet coordination grid</p>
             </div>
             <div class="card-body-clean">
@@ -18,13 +18,13 @@
                     <div class="row">
                         <!-- Account Details -->
                         <div class="col-md-6 mb-4">
-                            <label asp-for="Username" class="form-label text-white-50"><i class="fa-solid fa-user me-1"></i> Username</label>
+                            <label asp-for="Username" class="form-label text-dark fw-semibold"><i class="fa-solid fa-user me-1"></i> Username</label>
                             <input asp-for="Username" class="form-control form-control-dark" placeholder="Choose a username" />
                             <span asp-validation-for="Username" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
 
                         <div class="col-md-6 mb-4">
-                            <label asp-for="FullName" class="form-label text-white-50"><i class="fa-solid fa-signature me-1"></i> Full Name</label>
+                            <label asp-for="FullName" class="form-label text-dark fw-semibold"><i class="fa-solid fa-signature me-1"></i> Full Name</label>
                             <input asp-for="FullName" class="form-control form-control-dark" placeholder="John Doe" />
                             <span asp-validation-for="FullName" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
@@ -32,14 +32,14 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-4">
-                            <label asp-for="PhoneNumber" class="form-label text-white-50"><i class="fa-solid fa-phone me-1"></i> Phone Number</label>
+                            <label asp-for="PhoneNumber" class="form-label text-dark fw-semibold"><i class="fa-solid fa-phone me-1"></i> Phone Number</label>
                             <input asp-for="PhoneNumber" class="form-control form-control-dark" placeholder="e.g. +1 555-0199" />
                             <span asp-validation-for="PhoneNumber" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
 
                         <div class="col-md-6 mb-4">
-                            <label asp-for="Role" class="form-label text-white-50"><i class="fa-solid fa-users-gear me-1"></i> System Role</label>
-                            <select asp-for="Role" class="form-select form-control-dark" id="roleSelector" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27m2 5 6 6 6-6%27/%3e%3c/svg%3e');">
+                            <label asp-for="Role" class="form-label text-dark fw-semibold"><i class="fa-solid fa-users-gear me-1"></i> System Role</label>
+                            <select asp-for="Role" class="form-select form-control-dark" id="roleSelector" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23334155%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27m2 5 6 6 6-6%27/%3e%3c/svg%3e');">
                                 <option value="Citizen" selected>Citizen (Report & Track)</option>
                                 <option value="RescueTeam">Rescue Crew (First Responder)</option>
                                 <option value="Admin">System Administrator</option>
@@ -53,12 +53,12 @@
                         <h4 class="h6 text-danger mb-3"><i class="fa-solid fa-shield-halved me-1"></i> Rescue Team Operations Setup</h4>
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label asp-for="TeamName" class="form-label text-white-50">Rescue Team Name</label>
+                                <label asp-for="TeamName" class="form-label text-dark fw-semibold">Rescue Team Name</label>
                                 <input asp-for="TeamName" class="form-control form-control-dark" placeholder="e.g. Alpha Squad" />
                                 <span asp-validation-for="TeamName" class="text-danger fs-9 mt-1 d-block"></span>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label asp-for="TeamContactNumber" class="form-label text-white-50">Team Hotline Number</label>
+                                <label asp-for="TeamContactNumber" class="form-label text-dark fw-semibold">Team Hotline Number</label>
                                 <input asp-for="TeamContactNumber" class="form-control form-control-dark" placeholder="e.g. +1 555-0100" />
                                 <span asp-validation-for="TeamContactNumber" class="text-danger fs-9 mt-1 d-block"></span>
                             </div>
@@ -67,13 +67,13 @@
 
                     <div class="row">
                         <div class="col-md-6 mb-4">
-                            <label asp-for="Password" class="form-label text-white-50"><i class="fa-solid fa-lock me-1"></i> Security Password</label>
+                            <label asp-for="Password" class="form-label text-dark fw-semibold"><i class="fa-solid fa-lock me-1"></i> Security Password</label>
                             <input asp-for="Password" class="form-control form-control-dark" placeholder="At least 6 characters" />
                             <span asp-validation-for="Password" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
 
                         <div class="col-md-6 mb-4">
-                            <label asp-for="ConfirmPassword" class="form-label text-white-50"><i class="fa-solid fa-lock-open me-1"></i> Confirm Password</label>
+                            <label asp-for="ConfirmPassword" class="form-label text-dark fw-semibold"><i class="fa-solid fa-lock-open me-1"></i> Confirm Password</label>
                             <input asp-for="ConfirmPassword" class="form-control form-control-dark" placeholder="Repeat password" />
                             <span asp-validation-for="ConfirmPassword" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
@@ -84,7 +84,7 @@
                     </button>
                 </form>
             </div>
-            <div class="card-footer border-top border-secondary text-center py-3 bg-dark bg-opacity-25" style="border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);">
+            <div class="card-footer border-top border-secondary text-center py-3 bg-light" style="border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);">
                 <span class="text-muted">Already registered? </span>
                 <a asp-action="Login" class="text-danger font-weight-bold text-decoration-none">Verify Account</a>
             </div>

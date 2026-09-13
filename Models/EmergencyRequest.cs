@@ -31,7 +31,7 @@ namespace ResuceNet.Models
 
         [Required]
         [StringLength(50)]
-        public string Status { get; set; } = "Created"; // 'Created', 'AI Analyzed', 'Assigned', 'Rescue Team Accepted', 'On The Way', 'Rescue In Progress', 'Resolved'
+        public string Status { get; set; } = "Created"; // 'Created', 'Assigned', 'Rescue Team Accepted', 'On The Way', 'Rescue In Progress', 'Resolved'
 
         [Required]
         [StringLength(50)]

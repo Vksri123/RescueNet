@@ -7,8 +7,8 @@
     <div class="col-lg-5 mb-4">
         <div class="glass-card h-100">
             <div class="card-header-clean bg-danger bg-opacity-5">
-                <h2 class="h4 mb-1 text-white"><i class="fa-solid fa-bell-exclamation text-danger me-2"></i> Report Emergency</h2>
-                <p class="text-muted mb-0 fs-8">Provide accurate detail for instant AI analysis and dispatch</p>
+                <h2 class="h4 mb-1 text-dark fw-bold"><i class="fa-solid fa-bell-exclamation text-danger me-2"></i> Report Emergency</h2>
+                <p class="text-muted mb-0 fs-8">Provide accurate detail for priority assessment and rapid rescue dispatch</p>
             </div>
             <div class="card-body-clean">
                 <form asp-action="Create" method="post" enctype="multipart/form-data">
@@ -16,8 +16,8 @@
 
                     <!-- Type Selector -->
                     <div class="mb-4">
-                        <label asp-for="EmergencyType" class="form-label text-white-50">Crisis Incident Type</label>
-                        <select asp-for="EmergencyType" class="form-select form-control-dark" style="background-image: url('data:image/svg+xml,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 16 16%27%3e%3cpath fill=%27none%27 stroke=%27%23ffffff%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27 stroke-width=%272%27 d=%27m2 5 6 6 6-6%27/%3e%3c/svg%3e');">
+                        <label asp-for="EmergencyType" class="form-label text-dark fw-semibold">Crisis Incident Type</label>
+                        <select asp-for="EmergencyType" class="form-select form-control-dark">
                             <option value="">-- Choose emergency type --</option>
                             <option value="Flood">Flood (Severe water rise/trapped)</option>
                             <option value="Fire">Fire (Structural/forest blaze)</option>
@@ -31,7 +31,7 @@
 
                     <!-- Description -->
                     <div class="mb-4">
-                        <label asp-for="Description" class="form-label text-white-50">Describe the Crisis Situation</label>
+                        <label asp-for="Description" class="form-label text-dark fw-semibold">Describe the Crisis Situation</label>
                         <textarea asp-for="Description" rows="4" class="form-control form-control-dark" placeholder="Specify if children/elderly are trapped, water levels, injuries, or fire scale..."></textarea>
                         <span asp-validation-for="Description" class="text-danger fs-9 mt-1 d-block"></span>
                     </div>
@@ -39,20 +39,20 @@
                     <!-- Location Coordinates -->
                     <div class="row mb-4">
                         <div class="col-6">
-                            <label asp-for="Latitude" class="form-label text-white-50 fs-8">Latitude</label>
-                            <input asp-for="Latitude" class="form-control form-control-dark font-monospace" id="latInput" readonly style="background-color: rgba(31, 41, 55, 0.5) !important; color: #ffffff !important;" />
+                            <label asp-for="Latitude" class="form-label text-dark fw-semibold fs-8">Latitude</label>
+                            <input asp-for="Latitude" class="form-control form-control-dark font-monospace" id="latInput" readonly />
                             <span asp-validation-for="Latitude" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
                         <div class="col-6">
-                            <label asp-for="Longitude" class="form-label text-white-50 fs-8">Longitude</label>
-                            <input asp-for="Longitude" class="form-control form-control-dark font-monospace" id="lngInput" readonly style="background-color: rgba(31, 41, 55, 0.5) !important; color: #ffffff !important;" />
+                            <label asp-for="Longitude" class="form-label text-dark fw-semibold fs-8">Longitude</label>
+                            <input asp-for="Longitude" class="form-control form-control-dark font-monospace" id="lngInput" readonly />
                             <span asp-validation-for="Longitude" class="text-danger fs-9 mt-1 d-block"></span>
                         </div>
                     </div>
 
                     <!-- Media Upload -->
                     <div class="mb-4">
-                        <label asp-for="MediaFile" class="form-label text-white-50">Upload Image/Video Evidence</label>
+                        <label asp-for="MediaFile" class="form-label text-dark fw-semibold">Upload Image/Video Evidence</label>
                         <input asp-for="MediaFile" type="file" class="form-control form-control-dark" accept="image/*,video/*" />
                         <span asp-validation-for="MediaFile" class="text-danger fs-9 mt-1 d-block"></span>
                     </div>
@@ -70,14 +70,14 @@
     <div class="col-lg-7 mb-4">
         <div class="glass-card h-100 card-body-clean">
             <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-map-location-dot text-danger me-2"></i> Select Crisis Location</h3>
-                <button type="button" class="btn btn-sm btn-outline-light" id="gpsBtn">
+                <h3 class="h5 mb-0 text-dark fw-bold"><i class="fa-solid fa-map-location-dot text-danger me-2"></i> Select Crisis Location</h3>
+                <button type="button" class="btn btn-sm btn-outline-primary fw-semibold" id="gpsBtn">
                     <i class="fa-solid fa-location-crosshairs me-1"></i> Retrieve My GPS
                 </button>
             </div>
             
-            <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-white-50 fs-8 mb-3">
-                <i class="fa-solid fa-circle-info text-info me-1"></i> 
+            <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-dark fw-semibold fs-8 mb-3">
+                <i class="fa-solid fa-circle-info text-primary me-1"></i> 
                 Click or drag the red marker on the map to set the exact coordinates of the disaster location.
             </div>
 

@@ -13,3 +13,7 @@
 ## Temporary / Logs
 *.log
 *.tmp
+
+## User Uploads
+wwwroot/uploads/*
+!wwwroot/uploads/.gitkeep

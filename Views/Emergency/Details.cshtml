@@ -8,10 +8,10 @@
 <div class="row fade-in">
     <div class="col-lg-8 mb-4">
         <div class="glass-card mb-4">
-            <div class="card-header-clean bg-dark bg-opacity-40 d-flex justify-content-between align-items-center">
+            <div class="card-header-clean bg-light border-bottom d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="h4 text-white mb-0">Emergency Incident File #@Model.Id</h2>
-                    <p class="text-muted fs-9 mb-0">Logged: @Model.CreatedAt.ToLocalTime().ToString("g")</p>
+                    <h2 class="h4 text-dark font-weight-bold mb-1">Emergency Incident File #@Model.Id</h2>
+                    <p class="text-secondary fs-9 mb-0 fw-semibold">Logged: <strong class="text-dark">@Model.CreatedAt.ToLocalTime().ToString("g")</strong></p>
                 </div>
                 <span class="badge-priority badge-@Model.PriorityLevel.ToLowerInvariant()">@Model.PriorityLevel Priority</span>
             </div>
@@ -19,11 +19,11 @@
             <div class="card-body-clean">
                 <div class="row g-4">
                     <div class="col-md-7">
-                        <h4 class="text-white-50 fs-8 text-uppercase">Citizen Statement</h4>
-                        <p class="text-white fs-6">"@Model.Description"</p>
+                        <h4 class="text-secondary fs-8 text-uppercase">Citizen Statement</h4>
+                        <p class="text-dark fs-6">"@Model.Description"</p>
                         
-                        <h4 class="text-white-50 fs-8 text-uppercase mt-4">AI Risk Triage Summary</h4>
-                        <div class="p-3 rounded border border-secondary bg-dark bg-opacity-20 mt-2">
+                        <h4 class="text-secondary fs-8 text-uppercase mt-4">Risk & Status Summary</h4>
+                        <div class="p-3 rounded border border-secondary bg-light mt-2">
                             <div class="row text-center">
                                 <div class="col-6 border-end border-secondary">
                                     <span class="text-muted d-block fs-9 text-uppercase">Risk Score</span>
@@ -31,7 +31,7 @@
                                 </div>
                                 <div class="col-6">
                                     <span class="text-muted d-block fs-9 text-uppercase">Triage Status</span>
-                                    <span class="h5 text-white">@Model.Status</span>
+                                    <span class="h5 text-dark">@Model.Status</span>
                                 </div>
                             </div>
                         </div>
@@ -40,7 +40,7 @@
                     <div class="col-md-5">
                         @if (!string.IsNullOrEmpty(Model.MediaUrl))
                         {
-                            <h4 class="text-white-50 fs-8 text-uppercase mb-2">Evidence Attachment</h4>
+                            <h4 class="text-secondary fs-8 text-uppercase mb-2">Evidence Attachment</h4>
                             @if (Model.MediaUrl.EndsWith(".mp4") || Model.MediaUrl.EndsWith(".mov"))
                             {
                                 <video src="@Model.MediaUrl" controls class="w-100 rounded border border-secondary" style="max-height: 220px; object-fit: cover;"></video>
@@ -53,7 +53,7 @@
                         else
                         {
                             <div class="border border-dashed border-secondary rounded p-4 text-center text-muted fs-8 h-100 d-flex flex-column align-items-center justify-content-center">
-                                <i class="fa-solid fa-image fa-2x mb-2 text-white-50"></i>
+                                <i class="fa-solid fa-image fa-2x mb-2 text-muted"></i>
                                 No evidence files attached.
                             </div>
                         }
@@ -65,7 +65,7 @@
         <!-- History Log Card -->
         <div class="glass-card">
             <div class="card-header-clean">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i> Timeline Operations Log</h3>
+                <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i> Timeline Operations Log</h3>
             </div>
             <div class="card-body-clean">
                 <div class="timeline-logs">
@@ -75,7 +75,7 @@
                             <div class="text-muted fs-8 font-monospace me-3" style="min-width: 90px;">@log.ChangedAt.ToLocalTime().ToString("g")</div>
                             <div>
                                 <span class="badge bg-secondary fs-9 me-2">@log.Status</span>
-                                <p class="mb-0 text-white-50 fs-8">@log.Notes</p>
+                                <p class="mb-0 text-dark fs-8">@log.Notes</p>
                             </div>
                         </div>
                     }
@@ -89,7 +89,7 @@
         <!-- Map Card -->
         <div class="glass-card mb-4">
             <div class="card-header-clean">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-earth-americas text-primary me-2"></i> Geospatial Vector</h3>
+                <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-earth-americas text-primary me-2"></i> Geospatial Vector</h3>
             </div>
             <div class="card-body-clean">
                 <div id="detailMap" class="map-container mb-3" style="height: 250px;"></div>
@@ -102,28 +102,33 @@
 
         <!-- Team Assignment status card -->
         <div class="glass-card">
-            <div class="card-header-clean">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-truck-medical text-success me-2"></i> Team Allocation</h3>
+            <div class="card-header-clean bg-light">
+                <h3 class="h5 mb-0 text-dark fw-bold"><i class="fa-solid fa-truck-medical text-success me-2"></i> Team Allocation</h3>
             </div>
             <div class="card-body-clean">
                 @if (assignment != null && assignment.RescueTeam != null)
                 {
-                    <div class="p-3 rounded border border-success border-opacity-20 bg-success bg-opacity-5">
-                        <h4 class="h6 text-success mb-2">@assignment.RescueTeam.TeamName</h4>
-                        <div class="mb-2 fs-8">
-                            <span class="text-muted d-block">Hotline:</span>
-                            <span class="text-white">@assignment.RescueTeam.ContactNumber</span>
+                    <div class="p-3 rounded-3 border border-secondary shadow-sm" style="background: #ffffff;">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h4 class="h6 text-success fw-bold mb-0">
+                                <i class="fa-solid fa-truck-medical me-1"></i> @assignment.RescueTeam.TeamName
+                            </h4>
+                            <span class="badge bg-success px-2 py-1">@assignment.Status</span>
                         </div>
-                        <div class="mb-2 fs-8">
-                            <span class="text-muted d-block">Dispatch State:</span>
-                            <span class="badge bg-info">@assignment.Status</span>
+                        <div class="mb-2">
+                            <span class="text-secondary d-block fs-8 fw-semibold">Hotline Contact:</span>
+                            <span class="text-dark font-weight-bold fs-7">@assignment.RescueTeam.ContactNumber</span>
+                        </div>
+                        <div>
+                            <span class="text-secondary d-block fs-8 fw-semibold">Operational Dispatch State:</span>
+                            <span class="text-dark fw-semibold fs-8">@assignment.Status</span>
                         </div>
                     </div>
                 }
                 else
                 {
-                    <div class="alert alert-warning bg-warning bg-opacity-10 border-warning border-opacity-20 text-warning-50 fs-8 mb-0">
-                        <i class="fa-solid fa-triangle-exclamation me-1"></i> No rescue crew has been allocated yet. Use Command Console to dispatch.
+                    <div class="alert alert-warning bg-warning bg-opacity-10 border-warning border-opacity-20 text-dark fs-8 mb-0 fw-semibold">
+                        <i class="fa-solid fa-triangle-exclamation me-1 text-warning"></i> No rescue crew has been allocated yet. Use Command Console to dispatch.
                     </div>
                 }
             </div>

@@ -8,7 +8,7 @@
         <div class="glass-card">
             <div class="card-header-clean text-center">
                 <i class="fa-solid fa-shield-halved text-danger fa-3x mb-3 pulse-slow"></i>
-                <h2 class="h3 text-white">System Login</h2>
+                <h2 class="h3 text-dark fw-bold">System Login</h2>
                 <p class="text-muted mb-0">Authorized Personnel & Citizen Verification</p>
             </div>
             <div class="card-body-clean">
@@ -16,13 +16,13 @@
                     <div asp-validation-summary="ModelOnly" class="text-danger mb-3 fs-9"></div>
 
                     <div class="mb-4">
-                        <label asp-for="Username" class="form-label text-white-50"><i class="fa-solid fa-user me-1"></i> Username</label>
+                        <label asp-for="Username" class="form-label text-dark fw-semibold"><i class="fa-solid fa-user me-1"></i> Username</label>
                         <input asp-for="Username" class="form-control form-control-dark" placeholder="Enter username" />
                         <span asp-validation-for="Username" class="text-danger fs-9 mt-1 d-block"></span>
                     </div>
 
                     <div class="mb-4">
-                        <label asp-for="Password" class="form-label text-white-50"><i class="fa-solid fa-key me-1"></i> Security Password</label>
+                        <label asp-for="Password" class="form-label text-dark fw-semibold"><i class="fa-solid fa-key me-1"></i> Security Password</label>
                         <input asp-for="Password" class="form-control form-control-dark" placeholder="••••••••" />
                         <span asp-validation-for="Password" class="text-danger fs-9 mt-1 d-block"></span>
                     </div>
@@ -37,7 +37,7 @@
                     </button>
                 </form>
             </div>
-            <div class="card-footer border-top border-secondary text-center py-3 bg-dark bg-opacity-25" style="border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);">
+            <div class="card-footer border-top border-secondary text-center py-3 bg-light" style="border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);">
                 <span class="text-muted">New user? </span>
                 <a asp-action="Register" class="text-danger font-weight-bold text-decoration-none">Create Response Account</a>
             </div>

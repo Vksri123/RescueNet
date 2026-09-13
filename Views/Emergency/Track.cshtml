@@ -12,7 +12,7 @@
             <div class="card-header-clean bg-danger bg-opacity-5 d-flex justify-content-between align-items-center">
                 <div>
                     <span class="live-indicator">Live Dispatch tracking</span>
-                    <h2 class="h4 text-white mb-0 mt-1">Request ID: #@Model.Id</h2>
+                    <h2 class="h4 text-dark mb-0 mt-1">Request ID: #@Model.Id</h2>
                 </div>
                 <span class="badge bg-secondary">@Model.EmergencyType</span>
             </div>
@@ -21,7 +21,7 @@
                 <!-- Status Timeline Tracker -->
                 <div class="timeline-tracker">
                     @{
-                        string[] statuses = { "Created", "AI Analyzed", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress", "Resolved" };
+                        string[] statuses = { "Created", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress", "Resolved" };
                         int currentStepIndex = Array.IndexOf(statuses, Model.Status);
                         if (currentStepIndex == -1) currentStepIndex = 0; // Default fallback
                     }
@@ -64,15 +64,15 @@
 
                 <hr class="border-secondary my-4" />
 
-                <!-- Details & AI Analysis -->
+                <!-- Details & Status -->
                 <div class="row">
                     <div class="col-md-6 mb-3">
-                        <h4 class="text-white-50 fs-8 text-uppercase">Citizen Report Description</h4>
-                        <p class="text-white">"@Model.Description"</p>
+                        <h4 class="text-secondary fs-8 text-uppercase">Citizen Report Description</h4>
+                        <p class="text-dark">"@Model.Description"</p>
                         
                         @if (!string.IsNullOrEmpty(Model.MediaUrl))
                         {
-                            <h4 class="text-white-50 fs-8 text-uppercase mt-4">Evidence Media</h4>
+                            <h4 class="text-secondary fs-8 text-uppercase mt-4">Evidence Media</h4>
                             <div class="evidence-media-container mt-2">
                                 @if (Model.MediaUrl.EndsWith(".mp4") || Model.MediaUrl.EndsWith(".mov"))
                                 {
@@ -87,30 +87,30 @@
                     </div>
                     
                     <div class="col-md-6 mb-3">
-                        <div class="p-3 rounded border border-secondary bg-dark bg-opacity-20">
-                            <h4 class="text-white-50 fs-8 text-uppercase mb-2"><i class="fa-solid fa-microchip text-danger me-1"></i> AI Triage Metrics</h4>
+                        <div class="p-3 rounded border border-secondary bg-light">
+                            <h4 class="text-secondary fs-8 text-uppercase mb-2"><i class="fa-solid fa-triangle-exclamation text-danger me-1"></i> Priority & Metrics</h4>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="text-muted">Priority:</span>
                                 <span id="triagePriority" class="badge-priority badge-@Model.PriorityLevel.ToLowerInvariant()">@Model.PriorityLevel</span>
                             </div>
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <span class="text-muted">Risk Score:</span>
-                                <span class="h6 mb-0 text-white font-weight-bold"><span id="triageRisk">@Model.RiskScore</span>/100</span>
+                                <span class="h6 mb-0 text-dark font-weight-bold"><span id="triageRisk">@Model.RiskScore</span>/100</span>
                             </div>
                             
                             <hr class="border-secondary my-2" />
                             
-                            <h4 class="text-white-50 fs-8 text-uppercase mt-2 mb-2"><i class="fa-solid fa-truck-medical text-primary me-1"></i> Dispatch Info</h4>
+                            <h4 class="text-secondary fs-8 text-uppercase mt-2 mb-2"><i class="fa-solid fa-truck-medical text-primary me-1"></i> Dispatch Info</h4>
                             <div class="dispatch-details">
                                 @if (assignment != null && assignment.RescueTeam != null)
                                 {
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="text-muted">Assigned Team:</span>
-                                        <span class="text-white font-weight-bold">@assignment.RescueTeam.TeamName</span>
+                                        <span class="text-dark font-weight-bold">@assignment.RescueTeam.TeamName</span>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center mb-1">
                                         <span class="text-muted">Contact:</span>
-                                        <span class="text-white-50">@assignment.RescueTeam.ContactNumber</span>
+                                        <span class="text-secondary">@assignment.RescueTeam.ContactNumber</span>
                                     </div>
                                     <div class="d-flex justify-content-between align-items-center">
                                         <span class="text-muted">Status:</span>
@@ -131,7 +131,7 @@
         <!-- System History logs -->
         <div class="glass-card">
             <div class="card-header-clean">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-clipboard-list text-primary me-2"></i> Operations Logs</h3>
+                <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-clipboard-list text-primary me-2"></i> Operations Logs</h3>
             </div>
             <div class="card-body-clean" id="logList">
                 @foreach (var h in history)
@@ -140,7 +140,7 @@
                         <div class="log-time text-muted me-3 fs-9" style="min-width: 80px;">@h.ChangedAt.ToLocalTime().ToString("HH:mm:ss")</div>
                         <div class="log-details">
                             <span class="badge bg-secondary me-2 fs-9">@h.Status</span>
-                            <span class="text-white-50 fs-8">@h.Notes</span>
+                            <span class="text-dark fs-8">@h.Notes</span>
                         </div>
                     </div>
                 }
@@ -150,16 +150,16 @@
 
     <!-- Live Map Column -->
     <div class="col-lg-5 mb-4">
-        <div class="glass-card h-100 card-body-clean d-flex flex-column">
-            <h3 class="h5 text-white mb-3"><i class="fa-solid fa-map-location-dot text-danger me-2"></i> Real-Time Emergency Radar</h3>
+        <div class="glass-card card-body-clean mb-4 shadow-sm" style="overflow: hidden;">
+            <h3 class="h5 text-dark font-weight-bold mb-3"><i class="fa-solid fa-map-location-dot text-danger me-2"></i> Real-Time Emergency Radar</h3>
             
-            <div class="mb-3 d-flex justify-content-between align-items-center p-2 rounded bg-dark bg-opacity-40 border border-secondary">
-                <span class="text-muted fs-8">Incident Coordinates:</span>
-                <span class="text-white-50 fs-8 font-monospace">@Model.Latitude.ToString("F5"), @Model.Longitude.ToString("F5")</span>
+            <div class="mb-3 d-flex justify-content-between align-items-center p-2 rounded bg-light border border-secondary">
+                <span class="text-secondary fs-8 fw-semibold">Incident Coordinates:</span>
+                <span class="text-dark fs-8 font-monospace fw-bold">@Model.Latitude.ToString("F5"), @Model.Longitude.ToString("F5")</span>
             </div>
 
-            <div style="position: relative;" class="flex-grow-1 d-flex flex-column">
-                <div id="map" class="map-container flex-grow-1" style="min-height: 400px;"></div>
+            <div style="position: relative; overflow: hidden; border-radius: 12px;">
+                <div id="map" class="map-container w-100" style="height: 460px; min-height: 400px; max-height: 500px; overflow: hidden;"></div>
                 
                 <!-- Floating Map Quick Controls -->
                 <div class="map-floating-bar">
@@ -283,13 +283,13 @@
                             <div class="log-time text-muted me-3 fs-9" style="min-width: 80px;">${timeStr}</div>
                             <div class="log-details">
                                 <span class="badge bg-secondary me-2 fs-9">${status}</span>
-                                <span class="text-white-50 fs-8">${notes}</span>
+                                <span class="text-dark fs-8">${notes}</span>
                             </div>
                         </div>`;
                         $('#logList').prepend(logHtml);
 
                         // Highlight timeline steps
-                        var statuses = ["Created", "AI Analyzed", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress", "Resolved"];
+                        var statuses = ["Created", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress", "Resolved"];
                         var stepIndex = statuses.indexOf(status);
                         
                         if (stepIndex !== -1) {
@@ -312,22 +312,6 @@
                             });
                         }
 
-                        // Special UI updates based on status
-                        if (status === "AI Analyzed") {
-                            // Fetch priority & score from notes parse
-                            // Notes format: "AI Analysis complete. Priority: High, Risk Score: 60/100."
-                            var pMatch = notes.match(/Priority:\s*(\w+)/);
-                            var sMatch = notes.match(/Risk Score:\s*(\d+)/);
-                            
-                            if (pMatch && pMatch[1]) {
-                                $('#triagePriority').text(pMatch[1])
-                                    .attr('class', 'badge-priority badge-' + pMatch[1].toLowerCase());
-                            }
-                            if (sMatch && sMatch[1]) {
-                                $('#triageRisk').text(sMatch[1]);
-                            }
-                        }
-
                         if (status === "Assigned") {
                             // Reload page to fetch dispatch team details
                             setTimeout(function() { window.location.reload(); }, 2000);
@@ -339,6 +323,13 @@
                                 teamMarker.bindPopup("Emergency Resolved! Rescue Crew Completed Operation.").openPopup();
                             }
                         }
+                    }
+                });
+
+                window.rescueHub.on("PriorityUpdate", function(id, priority) {
+                    if (id === reqId) {
+                        $('#triagePriority').text(priority)
+                            .attr('class', 'badge-priority badge-' + priority.toLowerCase());
                     }
                 });
 

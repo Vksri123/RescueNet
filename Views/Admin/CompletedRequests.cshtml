@@ -5,25 +5,32 @@
     var histories = ViewBag.Histories as List<EmergencyStatusHistory> ?? new List<EmergencyStatusHistory>();
 }
 
-<div class="row fade-in mb-4">
-    <div class="col-12 d-flex justify-content-between align-items-center mb-3">
+<div class="page-header-card fade-in">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
         <div>
-            <h2 class="h3 text-white mb-1"><i class="fa-solid fa-box-archive text-success me-2"></i> Completed Crisis Archive</h2>
-            <p class="text-muted mb-0 fs-8">Historical log of all resolved and closed emergency incidents</p>
+            <h2 class="h3 text-dark fw-bold mb-1">
+                <i class="fa-solid fa-box-archive text-success me-2"></i> Completed Crisis Archive
+            </h2>
+            <p class="text-secondary fs-8 mb-0">Historical log of all resolved and closed emergency incidents</p>
         </div>
-        <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-light btn-sm">
-            <i class="fa-solid fa-arrow-left me-1"></i> Back to Control Center
-        </a>
+        <div>
+            <a asp-controller="Admin" asp-action="Dashboard" class="btn btn-outline-dark btn-sm fw-semibold">
+                <i class="fa-solid fa-arrow-left me-1"></i> Back to Control Center
+            </a>
+        </div>
     </div>
+</div>
+
+<div class="row fade-in mb-4">
 
     <!-- Summary Metrics -->
     <div class="col-md-4 mb-3">
-        <div class="metric-box metric-box-low">
+        <div class="metric-box metric-box-low bg-white shadow-sm border">
             <div>
-                <span class="text-success d-block fs-8 text-uppercase">Total Resolved Cases</span>
+                <span class="text-success d-block fs-8 text-uppercase fw-semibold">Total Resolved Cases</span>
                 <span class="metric-number text-success">@Model.Count</span>
             </div>
-            <div class="metric-icon text-success opacity-50"><i class="fa-solid fa-circle-check"></i></div>
+            <div class="metric-icon text-success opacity-75"><i class="fa-solid fa-circle-check"></i></div>
         </div>
     </div>
     <div class="col-md-8 mb-3">
@@ -39,8 +46,8 @@
 <div class="row fade-in">
     <div class="col-12">
         <div class="glass-card">
-            <div class="card-header-clean bg-dark bg-opacity-35">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-list text-primary me-2"></i> Resolved Cases Log</h3>
+            <div class="card-header-clean bg-light border-bottom">
+                <h3 class="h5 mb-0 text-dark fw-bold"><i class="fa-solid fa-list text-primary me-2"></i> Resolved Cases Log</h3>
             </div>
             <div class="card-body-clean">
                 @if (Model.Any())
@@ -66,15 +73,15 @@
                                     var resHistory = histories.Where(h => h.EmergencyRequestId == r.Id && (h.Status == "Resolved" || h.Status == "Completed")).OrderByDescending(h => h.ChangedAt).FirstOrDefault();
                                     
                                     <tr>
-                                        <td class="font-monospace text-white-50">#@r.Id</td>
+                                        <td class="font-monospace text-secondary fw-semibold">#@r.Id</td>
                                         <td>
                                             <span class="badge bg-secondary">@r.EmergencyType</span>
                                         </td>
                                         <td>
-                                            <span class="text-white font-weight-bold d-block">@r.Citizen?.FullName</span>
-                                            <span class="text-white-50 fs-9"><i class="fa-solid fa-phone me-1"></i> @(r.Citizen?.PhoneNumber ?? "N/A")</span>
+                                            <span class="text-dark font-weight-bold d-block">@r.Citizen?.FullName</span>
+                                            <span class="text-secondary fs-9"><i class="fa-solid fa-phone me-1"></i> @(r.Citizen?.PhoneNumber ?? "N/A")</span>
                                         </td>
-                                        <td class="text-white-50 fs-8" style="max-width: 250px;">
+                                        <td class="text-dark fs-8" style="max-width: 250px;">
                                             "@r.Description"
                                         </td>
                                         <td>
@@ -84,19 +91,19 @@
                                         <td>
                                             @if (assignment != null && assignment.RescueTeam != null)
                                             {
-                                                <span class="text-white font-weight-bold d-block">@assignment.RescueTeam.TeamName</span>
-                                                <span class="text-info fs-9">Hotline: @assignment.RescueTeam.ContactNumber</span>
+                                                <span class="text-dark font-weight-bold d-block">@assignment.RescueTeam.TeamName</span>
+                                                <span class="text-info fs-9 fw-semibold">Hotline: @assignment.RescueTeam.ContactNumber</span>
                                             }
                                             else
                                             {
                                                 <span class="text-muted fs-8">System Resolved</span>
                                             }
                                         </td>
-                                        <td class="text-white-50 fs-9 font-monospace">
+                                        <td class="text-secondary fs-9 font-monospace">
                                             @(resHistory != null ? resHistory.ChangedAt.ToLocalTime().ToString("g") : r.UpdatedAt.ToLocalTime().ToString("g"))
                                         </td>
                                         <td class="text-center">
-                                            <a asp-controller="Emergency" asp-action="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-light">
+                                            <a asp-controller="Emergency" asp-action="Details" asp-route-id="@r.Id" class="btn btn-sm btn-outline-primary fw-semibold">
                                                 <i class="fa-solid fa-folder-open me-1"></i> Details
                                             </a>
                                         </td>
@@ -109,8 +116,8 @@
                 else
                 {
                     <div class="text-center py-5 text-muted">
-                        <i class="fa-solid fa-box-open fa-3x mb-3 text-white-50 opacity-50"></i>
-                        <h4 class="h5 text-white-50">No Resolved Incidents Found</h4>
+                        <i class="fa-solid fa-box-open fa-3x mb-3 text-muted opacity-50"></i>
+                        <h4 class="h5 text-dark fw-bold">No Resolved Incidents Found</h4>
                         <p class="fs-8 mb-0">Incidents will appear in this archive once marked as Resolved by rescue crews or admins.</p>
                     </div>
                 }

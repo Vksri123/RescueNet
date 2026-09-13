@@ -39,7 +39,7 @@ namespace ResuceNet.Controllers
         public async Task<IActionResult> Dashboard()
         {
             // Active is status NOT Resolved/Rejected
-            var activeStatuses = new[] { "Created", "AI Analyzed", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress" };
+            var activeStatuses = new[] { "Created", "Assigned", "Rescue Team Accepted", "On The Way", "Rescue In Progress" };
 
             var activeRequests = await _context.EmergencyRequests
                 .Include(r => r.Citizen)
@@ -50,6 +50,40 @@ namespace ResuceNet.Controllers
             var teams = await _context.RescueTeams
                 .Include(t => t.User)
                 .ToListAsync();
+
+            // Synchronize team status with active assignments
+            var busyTeamIds = await _context.EmergencyAssignments
+                .Where(a => a.Status != "Completed" && 
+                            a.Status != "Rejected" &&
+                            a.EmergencyRequest != null &&
+                            a.EmergencyRequest.Status != "Resolved" &&
+                            a.EmergencyRequest.Status != "Rejected")
+                .Select(a => a.RescueTeamId)
+                .Distinct()
+                .ToListAsync();
+
+            bool teamsChanged = false;
+            foreach (var team in teams)
+            {
+                if (busyTeamIds.Contains(team.Id))
+                {
+                    if (team.Status != "Busy")
+                    {
+                        team.Status = "Busy";
+                        teamsChanged = true;
+                    }
+                }
+                else if (team.Status == "Busy")
+                {
+                    team.Status = "Available";
+                    teamsChanged = true;
+                }
+            }
+
+            if (teamsChanged)
+            {
+                await _context.SaveChangesAsync();
+            }
 
             // Counts
             int totalActive = activeRequests.Count;
@@ -137,6 +171,151 @@ namespace ResuceNet.Controllers
                 TempData["Success"] = "Team successfully assigned and dispatched!";
             }
             return RedirectToAction("Dashboard");
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdatePriority(int requestId, string priority)
+        {
+            var request = await _context.EmergencyRequests.FindAsync(requestId);
+            if (request != null)
+            {
+                request.PriorityLevel = priority;
+                request.RiskScore = priority switch
+                {
+                    "Critical" => 95,
+                    "High" => 75,
+                    "Medium" => 50,
+                    _ => 25
+                };
+                request.UpdatedAt = DateTime.UtcNow;
+
+                var history = new EmergencyStatusHistory
+                {
+                    EmergencyRequestId = request.Id,
+                    Status = request.Status,
+                    Notes = $"Priority manually updated to {priority} by Admin.",
+                    ChangedAt = DateTime.UtcNow,
+                    ChangedByUserId = int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var uid) ? uid : (int?)null
+                };
+                _context.EmergencyStatusHistories.Add(history);
+                await _context.SaveChangesAsync();
+
+                await _hubContext.Clients.All.SendAsync("StatusUpdate", request.Id, request.Status, $"Priority set to {priority} by Command Center.");
+                TempData["Success"] = $"Incident #{requestId} priority updated to {priority}.";
+            }
+            return RedirectToAction("Dashboard");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> RescueTeams()
+        {
+            var teams = await _context.RescueTeams
+                .Include(t => t.User)
+                .OrderByDescending(t => t.Id)
+                .ToListAsync();
+
+            // Find all team IDs with active ongoing assignments
+            var busyTeamIds = await _context.EmergencyAssignments
+                .Where(a => a.Status != "Completed" && 
+                            a.Status != "Rejected" &&
+                            a.EmergencyRequest != null &&
+                            a.EmergencyRequest.Status != "Resolved" &&
+                            a.EmergencyRequest.Status != "Rejected")
+                .Select(a => a.RescueTeamId)
+                .Distinct()
+                .ToListAsync();
+
+            bool changed = false;
+            foreach (var team in teams)
+            {
+                if (busyTeamIds.Contains(team.Id))
+                {
+                    if (team.Status != "Busy")
+                    {
+                        team.Status = "Busy";
+                        changed = true;
+                    }
+                }
+                else if (team.Status == "Busy")
+                {
+                    // No active assignment anymore, release team
+                    team.Status = "Available";
+                    changed = true;
+                }
+            }
+
+            if (changed)
+            {
+                await _context.SaveChangesAsync();
+            }
+
+            return View(teams);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteRescueTeam(int id)
+        {
+            var team = await _context.RescueTeams.Include(t => t.User).FirstOrDefaultAsync(t => t.Id == id);
+            if (team == null)
+            {
+                TempData["Error"] = "Rescue team not found.";
+                return RedirectToAction("RescueTeams");
+            }
+
+            // Check if team is busy on operation
+            if (team.Status == "Busy")
+            {
+                TempData["Error"] = "Team is busy on rescue operation";
+                return RedirectToAction("RescueTeams");
+            }
+
+            // Also check for any active ongoing assignment
+            var hasActiveAssignment = await _context.EmergencyAssignments
+                .Include(a => a.EmergencyRequest)
+                .AnyAsync(a => a.RescueTeamId == id &&
+                               a.Status != "Completed" &&
+                               a.EmergencyRequest != null &&
+                               a.EmergencyRequest.Status != "Resolved" &&
+                               a.EmergencyRequest.Status != "Rejected");
+
+            if (hasActiveAssignment)
+            {
+                TempData["Error"] = "Team is busy on rescue operation";
+                return RedirectToAction("RescueTeams");
+            }
+
+            var teamName = team.TeamName;
+
+            // Remove associated assignments for this team
+            var assignments = await _context.EmergencyAssignments.Where(a => a.RescueTeamId == id).ToListAsync();
+            _context.EmergencyAssignments.RemoveRange(assignments);
+
+            // Nullify ChangedByUserId in EmergencyStatusHistory to prevent FK_EmergencyStatusHistory_Users conflict
+            if (team.UserId > 0)
+            {
+                var statusHistories = await _context.EmergencyStatusHistories
+                    .Where(h => h.ChangedByUserId == team.UserId)
+                    .ToListAsync();
+
+                foreach (var h in statusHistories)
+                {
+                    h.ChangedByUserId = null;
+                }
+            }
+
+            var user = team.User;
+            _context.RescueTeams.Remove(team);
+
+            if (user != null)
+            {
+                _context.Users.Remove(user);
+            }
+
+            await _context.SaveChangesAsync();
+            TempData["Success"] = $"Rescue team '{teamName}' was successfully deleted.";
+            return RedirectToAction("RescueTeams");
         }
 
         [HttpPost]

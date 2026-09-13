@@ -51,7 +51,27 @@ namespace ResuceNet.Controllers
             var activeAssignment = await _context.EmergencyAssignments
                 .Include(a => a.EmergencyRequest)
                 .ThenInclude(r => r!.Citizen)
-                .FirstOrDefaultAsync(a => a.RescueTeamId == team.Id && a.Status != "Completed" && a.Status != "Rejected");
+                .FirstOrDefaultAsync(a => a.RescueTeamId == team.Id && 
+                                          a.Status != "Completed" && 
+                                          a.Status != "Rejected" &&
+                                          a.EmergencyRequest != null &&
+                                          a.EmergencyRequest.Status != "Resolved" &&
+                                          a.EmergencyRequest.Status != "Rejected");
+
+            // Auto-synchronize team status
+            if (activeAssignment != null)
+            {
+                if (team.Status != "Busy")
+                {
+                    team.Status = "Busy";
+                    await _context.SaveChangesAsync();
+                }
+            }
+            else if (team.Status == "Busy")
+            {
+                team.Status = "Available";
+                await _context.SaveChangesAsync();
+            }
 
             var history = new System.Collections.Generic.List<Models.EmergencyStatusHistory>();
             if (activeAssignment != null)
@@ -62,9 +82,15 @@ namespace ResuceNet.Controllers
                     .ToListAsync();
             }
 
-            // Fetch list of unassigned emergencies that the team could self-assign or view
+            // Strictly exclude any requests that are assigned to ANY team so only the assigned team sees them
+            var assignedRequestIds = await _context.EmergencyAssignments
+                .Where(a => a.Status != "Rejected")
+                .Select(a => a.EmergencyRequestId)
+                .Distinct()
+                .ToListAsync();
+
             var unassigned = await _context.EmergencyRequests
-                .Where(r => r.Status == "Created" || r.Status == "AI Analyzed")
+                .Where(r => r.Status == "Created" && !assignedRequestIds.Contains(r.Id))
                 .OrderByDescending(r => r.CreatedAt)
                 .ToListAsync();
 
@@ -123,6 +149,23 @@ namespace ResuceNet.Controllers
             var team = await _context.RescueTeams.FirstOrDefaultAsync(t => t.UserId == userId);
             if (team != null)
             {
+                var hasActiveAssignment = await _context.EmergencyAssignments
+                    .Include(a => a.EmergencyRequest)
+                    .AnyAsync(a => a.RescueTeamId == team.Id &&
+                                   a.Status != "Completed" &&
+                                   a.Status != "Rejected" &&
+                                   a.EmergencyRequest != null &&
+                                   a.EmergencyRequest.Status != "Resolved" &&
+                                   a.EmergencyRequest.Status != "Rejected");
+
+                if (hasActiveAssignment)
+                {
+                    team.Status = "Busy";
+                    await _context.SaveChangesAsync();
+                    TempData["Error"] = "Duty status cannot be changed while deployed on an active rescue operation.";
+                    return RedirectToAction("Dashboard");
+                }
+
                 await _emergencyService.UpdateTeamStatusAsync(team.Id, status);
             }
 

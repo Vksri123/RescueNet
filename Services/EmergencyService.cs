@@ -67,93 +67,7 @@ namespace ResuceNet.Services
             // Broadcast "Created" to SignalR
             await _hubContext.Clients.All.SendAsync("NewEmergency", request.Id, request.EmergencyType, request.Description, request.Latitude, request.Longitude, request.PriorityLevel, request.RiskScore);
 
-            // Trigger "AI Analyzed" and Auto-Dispatch simulation in the background
-            _ = SimulateAIAnalysisAndDispatch(request.Id);
-
             return request;
-        }
-
-        private async Task SimulateAIAnalysisAndDispatch(int requestId)
-        {
-            // Wait 3 seconds to simulate AI analysis
-            await Task.Delay(3000);
-
-            using (var scope = _scopeFactory.CreateScope())
-            {
-                var context = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                var priorityService = scope.ServiceProvider.GetRequiredService<IPriorityService>();
-                var teamAssignmentService = scope.ServiceProvider.GetRequiredService<ITeamAssignmentService>();
-                var hubContext = scope.ServiceProvider.GetRequiredService<IHubContext<EmergencyHub>>();
-
-                var request = await context.EmergencyRequests.FindAsync(requestId);
-                if (request == null) return;
-
-                // 1. Analyze priority
-                var (priority, score) = await priorityService.AnalyzePriorityAsync(request.Description, request.EmergencyType);
-                
-                request.PriorityLevel = priority;
-                request.RiskScore = score;
-                request.Status = "AI Analyzed";
-                request.UpdatedAt = DateTime.UtcNow;
-
-                var history = new EmergencyStatusHistory
-                {
-                    EmergencyRequestId = request.Id,
-                    Status = "AI Analyzed",
-                    Notes = $"AI Analysis complete. Priority: {priority}, Risk Score: {score}/100.",
-                    ChangedAt = DateTime.UtcNow
-                };
-
-                context.EmergencyStatusHistories.Add(history);
-                await context.SaveChangesAsync();
-
-                // Broadcast AI updates
-                await hubContext.Clients.All.SendAsync("StatusUpdate", request.Id, "AI Analyzed", $"Priority set to {priority}. Risk Score: {score}.");
-
-                // 2. Find nearest team and assign automatically (if Critical or High, otherwise wait for manual dispatch)
-                // Let's automatically dispatch if it's High/Critical and an available team is close.
-                // For demonstration, let's auto-dispatch ALL emergencies if an available team is found.
-                var nearestTeam = await teamAssignmentService.FindNearestAvailableTeamAsync(request.Latitude, request.Longitude);
-                if (nearestTeam != null)
-                {
-                    // Wait another 2 seconds to simulate automatic team dispatching
-                    await Task.Delay(2000);
-
-                    // Re-fetch request & team in scope db context
-                    var reqToAssign = await context.EmergencyRequests.FindAsync(requestId);
-                    var teamToAssign = await context.RescueTeams.Include(t => t.User).FirstOrDefaultAsync(t => t.Id == nearestTeam.Id);
-
-                    if (reqToAssign != null && teamToAssign != null && teamToAssign.Status == "Available")
-                    {
-                        reqToAssign.Status = "Assigned";
-                        reqToAssign.UpdatedAt = DateTime.UtcNow;
-
-                        var assignment = new EmergencyAssignment
-                        {
-                            EmergencyRequestId = reqToAssign.Id,
-                            RescueTeamId = teamToAssign.Id,
-                            Status = "Assigned",
-                            AssignedAt = DateTime.UtcNow
-                        };
-
-                        teamToAssign.Status = "Busy";
-
-                        var assignHistory = new EmergencyStatusHistory
-                        {
-                            EmergencyRequestId = reqToAssign.Id,
-                            Status = "Assigned",
-                            Notes = $"System auto-assigned rescue team '{teamToAssign.TeamName}' (Distance: {teamAssignmentService.CalculateDistance(reqToAssign.Latitude, reqToAssign.Longitude, teamToAssign.CurrentLatitude!.Value, teamToAssign.CurrentLongitude!.Value):F2} km).",
-                            ChangedAt = DateTime.UtcNow
-                        };
-
-                        context.EmergencyAssignments.Add(assignment);
-                        context.EmergencyStatusHistories.Add(assignHistory);
-                        await context.SaveChangesAsync();
-
-                        await hubContext.Clients.All.SendAsync("StatusUpdate", reqToAssign.Id, "Assigned", $"Rescue team '{teamToAssign.TeamName}' assigned to this incident.");
-                    }
-                }
-            }
         }
 
         public async Task<bool> AssignTeamAsync(int requestId, int teamId)
@@ -192,6 +106,7 @@ namespace ResuceNet.Services
             await _context.SaveChangesAsync();
 
             await _hubContext.Clients.All.SendAsync("StatusUpdate", request.Id, "Assigned", $"Rescue team '{team.TeamName}' assigned by Admin.");
+            await _hubContext.Clients.All.SendAsync("TeamAssigned", team.Id, request.Id, team.TeamName);
             return true;
         }
 
@@ -229,7 +144,15 @@ namespace ResuceNet.Services
                     var team = await _context.RescueTeams.FindAsync(a.RescueTeamId);
                     if (team != null)
                     {
-                        team.Status = "Available"; // Release team
+                        var hasOtherActive = await _context.EmergencyAssignments
+                            .AnyAsync(other => other.RescueTeamId == team.Id &&
+                                               other.EmergencyRequestId != requestId &&
+                                               other.Status != "Completed" &&
+                                               other.Status != "Rejected");
+                        if (!hasOtherActive)
+                        {
+                            team.Status = "Available"; // Release team
+                        }
                     }
                 }
             }
@@ -240,6 +163,13 @@ namespace ResuceNet.Services
 
                 if (activeAssignment != null)
                 {
+                    // Ensure the assigned team is explicitly marked as Busy
+                    var team = await _context.RescueTeams.FindAsync(activeAssignment.RescueTeamId);
+                    if (team != null && team.Status != "Busy")
+                    {
+                        team.Status = "Busy";
+                    }
+
                     if (status == "Rescue Team Accepted")
                     {
                         activeAssignment.Status = "Accepted";
@@ -280,6 +210,24 @@ namespace ResuceNet.Services
         {
             var team = await _context.RescueTeams.FindAsync(teamId);
             if (team == null) return false;
+
+            // Check if team has any ongoing active emergency operations
+            var hasActiveAssignment = await _context.EmergencyAssignments
+                .Include(a => a.EmergencyRequest)
+                .AnyAsync(a => a.RescueTeamId == teamId &&
+                               a.Status != "Completed" &&
+                               a.Status != "Rejected" &&
+                               a.EmergencyRequest != null &&
+                               a.EmergencyRequest.Status != "Resolved" &&
+                               a.EmergencyRequest.Status != "Rejected");
+
+            if (hasActiveAssignment)
+            {
+                // Must remain Busy on operation
+                team.Status = "Busy";
+                await _context.SaveChangesAsync();
+                return false;
+            }
 
             team.Status = status;
             await _context.SaveChangesAsync();

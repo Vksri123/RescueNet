@@ -8,42 +8,53 @@
     <div class="col-lg-6 mb-4">
         <!-- Team Status Card -->
         <div class="glass-card mb-4">
-            <div class="card-header-clean bg-dark bg-opacity-35 d-flex justify-content-between align-items-center">
+            <div class="card-header-clean bg-light border-bottom d-flex justify-content-between align-items-center">
                 <div>
-                    <h2 class="h4 text-white mb-0"><i class="fa-solid fa-people-group text-primary me-2"></i> @Model.Team.TeamName</h2>
-                    <p class="text-muted fs-9 mb-0">Hotline: @Model.Team.ContactNumber</p>
+                    <h2 class="h4 text-dark font-weight-bold mb-1"><i class="fa-solid fa-people-group text-primary me-2"></i> @Model.Team.TeamName</h2>
+                    <p class="text-secondary fs-9 mb-0 fw-semibold">Hotline: <strong class="text-dark">@Model.Team.ContactNumber</strong></p>
                 </div>
                 <div>
-                    @if (Model.Team.Status == "Available")
+                    @if (Model.Team.Status == "Busy" || Model.ActiveAssignment != null)
                     {
-                        <span class="badge bg-success text-uppercase py-2 px-3 fs-9">Available for Dispatch</span>
+                        <span class="badge bg-danger text-uppercase py-2 px-3 fs-9"><i class="fa-solid fa-person-running me-1"></i> Busy on Operation</span>
                     }
-                    else if (Model.Team.Status == "Busy")
+                    else if (Model.Team.Status == "Available")
                     {
-                        <span class="badge bg-danger text-uppercase py-2 px-3 fs-9">Busy on Operation</span>
+                        <span class="badge bg-success text-uppercase py-2 px-3 fs-9"><i class="fa-solid fa-circle-check me-1"></i> Available for Dispatch</span>
                     }
                     else
                     {
-                        <span class="badge bg-secondary text-uppercase py-2 px-3 fs-9">Offline</span>
+                        <span class="badge bg-secondary text-uppercase py-2 px-3 fs-9"><i class="fa-solid fa-moon me-1"></i> Offline</span>
                     }
                 </div>
             </div>
             
             <div class="card-body-clean">
                 <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-white-50">Toggle Duty Status:</span>
-                    <div class="d-flex gap-2">
-                        <form asp-controller="RescueTeam" asp-action="ToggleTeamStatus" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="status" value="Available" />
-                            <button type="submit" class="btn btn-sm btn-outline-success @(Model.Team.Status == "Available" ? "active" : "")">Available</button>
-                        </form>
-                        <form asp-controller="RescueTeam" asp-action="ToggleTeamStatus" method="post">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="status" value="Offline" />
-                            <button type="submit" class="btn btn-sm btn-outline-secondary @(Model.Team.Status == "Offline" ? "active" : "")">Offline</button>
-                        </form>
-                    </div>
+                    <span class="text-secondary fw-semibold">Duty Status Control:</span>
+                    @if (Model.Team.Status == "Busy" || Model.ActiveAssignment != null)
+                    {
+                        <div>
+                            <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 py-2 px-3 fs-9 fw-semibold">
+                                <i class="fa-solid fa-lock me-1"></i> Duty Locked: Busy on Operation
+                            </span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="d-flex gap-2">
+                            <form asp-controller="RescueTeam" asp-action="ToggleTeamStatus" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="status" value="Available" />
+                                <button type="submit" class="btn btn-sm btn-outline-success @(Model.Team.Status == "Available" ? "active" : "")">Available</button>
+                            </form>
+                            <form asp-controller="RescueTeam" asp-action="ToggleTeamStatus" method="post">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="status" value="Offline" />
+                                <button type="submit" class="btn btn-sm btn-outline-secondary @(Model.Team.Status == "Offline" ? "active" : "")">Offline</button>
+                            </form>
+                        </div>
+                    }
                 </div>
             </div>
         </div>
@@ -51,7 +62,7 @@
         <!-- Active Operations Card -->
         <div class="glass-card mb-4">
             <div class="card-header-clean bg-danger bg-opacity-5">
-                <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-truck-fire text-danger me-2"></i> Current Emergency Task</h3>
+                <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-truck-fire text-danger me-2"></i> Current Emergency Task</h3>
             </div>
             <div class="card-body-clean">
                 @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
@@ -60,26 +71,26 @@
                     
                     <div class="p-3 mb-3 rounded border border-danger border-opacity-15 bg-danger bg-opacity-5">
                         <div class="d-flex justify-content-between align-items-start mb-2">
-                            <h4 class="h5 text-white">@req.EmergencyType Incident</h4>
+                            <h4 class="h5 text-dark">@req.EmergencyType Incident</h4>
                             <span class="badge-priority badge-@req.PriorityLevel.ToLowerInvariant()">@req.PriorityLevel Priority</span>
                         </div>
-                        <p class="text-white-50 fs-8 mb-3">"@req.Description"</p>
+                        <p class="text-secondary fs-8 mb-3">"@req.Description"</p>
                         
                         <div class="row fs-9 text-muted mb-3">
                             <div class="col-6">
                                 <span class="d-block">Citizen Contact:</span>
-                                <span class="text-white font-weight-bold">@req.Citizen?.FullName</span>
+                                <span class="text-dark font-weight-bold">@req.Citizen?.FullName</span>
                             </div>
                             <div class="col-6">
                                 <span class="d-block">Report Location:</span>
-                                <span class="text-white font-weight-bold font-monospace">@req.Latitude.ToString("F4"), @req.Longitude.ToString("F4")</span>
+                                <span class="text-dark font-weight-bold font-monospace">@req.Latitude.ToString("F4"), @req.Longitude.ToString("F4")</span>
                             </div>
                         </div>
 
                         <!-- Current Assignment State Actions -->
                         <div class="border-top border-secondary border-opacity-20 pt-3">
                             <span class="text-muted d-block fs-9 mb-2">OPERATIONAL DISPATCH STAGE:</span>
-                            <h5 class="h6 text-white mb-3">
+                            <h5 class="h6 text-dark mb-3">
                                 Status: <span class="text-danger font-weight-bold" id="operationStatus">@req.Status</span>
                             </h5>
 
@@ -107,7 +118,7 @@
                                 }
                                 else if (Model.ActiveAssignment.Status == "OnTheWay" && req.Status != "Rescue In Progress")
                                 {
-                                    <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-white-50 fs-8 mb-0">
+                                    <div class="alert alert-info bg-info bg-opacity-10 border-info border-opacity-25 text-dark fs-8 mb-0">
                                         <i class="fa-solid fa-spinner fa-spin me-1"></i> En route to location. GPS route is simulating... (Arrives automatically in 15 seconds)
                                     </div>
                                 }
@@ -119,7 +130,7 @@
                                         <input type="hidden" name="status" value="Resolved" />
                                         <input type="hidden" name="notes" value="Emergency successfully resolved. All citizens accounted for." />
                                         <button type="submit" class="btn btn-premium-success w-100">
-                                            <i class="fa-solid fa-circle-check me-1"></i> Mark Incident as Resolved
+                                             <i class="fa-solid fa-circle-check me-1"></i> Mark Incident as Resolved
                                         </button>
                                     </form>
                                 }
@@ -130,7 +141,7 @@
                 else
                 {
                     <div class="text-center py-4 text-muted border border-dashed border-secondary rounded">
-                        <i class="fa-solid fa-clock fa-2x mb-2 text-white-50"></i>
+                        <i class="fa-solid fa-clock fa-2x mb-2 text-muted"></i>
                         <p class="mb-0 fs-8">Standby Mode. Waiting for Command Center dispatch assign.</p>
                     </div>
                 }
@@ -143,19 +154,22 @@
         @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
         {
             var req = Model.ActiveAssignment.EmergencyRequest;
-            <div class="glass-card h-100 card-body-clean d-flex flex-column">
-                <h3 class="h5 text-white mb-3"><i class="fa-solid fa-location-arrow text-primary me-2"></i> Rescue Navigation Map</h3>
-                <div id="navMap" class="map-container flex-grow-1" style="min-height: 420px;"></div>
+            <div class="glass-card card-body-clean mb-4 shadow-sm" style="overflow: hidden;">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="h5 text-dark font-weight-bold mb-0"><i class="fa-solid fa-location-arrow text-primary me-2"></i> Rescue Navigation Map</h3>
+                    <span class="badge bg-light text-secondary border border-secondary fs-9"><i class="fa-solid fa-satellite me-1 text-success"></i> Live GPS Tracking</span>
+                </div>
+                <div id="navMap" class="map-container w-100" style="height: 480px; min-height: 420px; max-height: 520px; border-radius: 12px; overflow: hidden;"></div>
             </div>
         }
         else
         {
             <!-- Display Unassigned cases -->
-            <div class="glass-card h-100">
-                <div class="card-header-clean bg-dark bg-opacity-35">
-                    <h3 class="h5 mb-0 text-white"><i class="fa-solid fa-clipboard-list text-warning me-2"></i> Global Crisis Queue</h3>
+            <div class="glass-card mb-4">
+                <div class="card-header-clean bg-light border-bottom">
+                    <h3 class="h5 mb-0 text-dark font-weight-bold"><i class="fa-solid fa-clipboard-list text-warning me-2"></i> Global Crisis Queue</h3>
                 </div>
-                <div class="card-body-clean">
+                <div class="card-body-clean" id="unassignedQueueContainer">
                     @if (Model.UnassignedEmergencies.Any())
                     {
                         <div class="table-responsive">
@@ -168,18 +182,18 @@
                                         <th>Distance</th>
                                     </tr>
                                 </thead>
-                                <tbody>
+                                <tbody id="unassignedQueueBody">
                                     @foreach (var u in Model.UnassignedEmergencies)
                                     {
                                         var dist = Model.Team.CurrentLatitude.HasValue && Model.Team.CurrentLongitude.HasValue ?
                                                    (double?)new TeamAssignmentService(null!).CalculateDistance(u.Latitude, u.Longitude, Model.Team.CurrentLatitude.Value, Model.Team.CurrentLongitude.Value) :
                                                    null;
-                                        <tr>
-                                            <td class="text-white font-weight-bold">@u.EmergencyType</td>
+                                        <tr id="emergency-row-@u.Id">
+                                            <td class="text-dark font-weight-bold">@u.EmergencyType</td>
                                             <td>
                                                 <span class="badge-priority badge-@u.PriorityLevel.ToLowerInvariant()">@u.PriorityLevel</span>
                                             </td>
-                                            <td class="text-white-50 fs-9">@u.CreatedAt.ToLocalTime().ToString("t")</td>
+                                            <td class="text-secondary fs-9">@u.CreatedAt.ToLocalTime().ToString("t")</td>
                                             <td class="text-info fs-8">@(dist.HasValue ? $"{dist.Value:F1} km" : "N/A")</td>
                                         </tr>
                                     }
@@ -201,16 +215,45 @@
 </div>
 
 @section Scripts {
-    @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
-    {
-        var req = Model.ActiveAssignment.EmergencyRequest;
-        var startLat = Model.Team.CurrentLatitude ?? 23.0225m;
-        var startLng = Model.Team.CurrentLongitude ?? 72.5714m;
-        
-        <script>
-            $(document).ready(function() {
+    <script>
+        $(document).ready(function() {
+            var myTeamId = @Model.Team.Id;
+
+            // Always listen for TeamAssigned so:
+            // 1. If assigned to this team: show SweetAlert2 and reload to show task and map
+            // 2. If assigned to another team: remove it from crisis queue so other teams don't see it
+            if (window.rescueHub) {
+                window.rescueHub.on("TeamAssigned", function(assignedTeamId, rId, tName) {
+                    console.log("TeamAssigned event received:", assignedTeamId, rId, tName);
+                    if (assignedTeamId === myTeamId) {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: '🚨 Emergency Dispatch Alert!',
+                            text: 'Incident #' + rId + ' has been assigned to your rescue squad (' + tName + ') by Command Center.',
+                            confirmButtonText: 'Open Emergency Task',
+                            confirmButtonColor: '#dc2626'
+                        }).then(function() {
+                            window.location.reload();
+                        });
+                    } else {
+                        // Remove from queue so it is not visible to this team
+                        $('#emergency-row-' + rId).fadeOut(400, function() {
+                            $(this).remove();
+                            if ($('#unassignedQueueBody tr').length === 0) {
+                                $('#unassignedQueueContainer').html('<div class="text-center py-5 text-muted"><i class="fa-solid fa-circle-check text-success fa-2x mb-2"></i><p class="mb-0 fs-8">No active emergencies found in the queue.</p></div>');
+                            }
+                        });
+                    }
+                });
+            }
+
+            @if (Model.ActiveAssignment != null && Model.ActiveAssignment.EmergencyRequest != null)
+            {
+                var req = Model.ActiveAssignment.EmergencyRequest;
+                var startLat = Model.Team.CurrentLatitude ?? 23.0225m;
+                var startLng = Model.Team.CurrentLongitude ?? 72.5714m;
+                <text>
                 var reqId = @req.Id;
-                var teamId = @Model.Team.Id;
                 var destLat = parseFloat("@req.Latitude");
                 var destLng = parseFloat("@req.Longitude");
 
@@ -263,12 +306,12 @@
                 // Fit map boundary
                 var bounds = new L.featureGroup([destMarker, teamMarker]);
                 map.fitBounds(bounds.getBounds().pad(0.2));
+                setTimeout(function() { if (map) map.invalidateSize(); }, 200);
 
                 // SignalR update bindings
                 if (window.rescueHub) {
                     window.rescueHub.on("TeamLocationUpdate", function(tId, rId, lat, lng, status) {
-                        if (tId === teamId && rId === reqId) {
-                            console.log("Simulated location received:", lat, lng);
+                        if (tId === myTeamId && rId === reqId) {
                             teamMarker.setLatLng([lat, lng]);
                             routeLine.setLatLngs([[lat, lng], [destLat, destLng]]);
                         }
@@ -276,16 +319,15 @@
 
                     window.rescueHub.on("StatusUpdate", function(id, status, notes) {
                         if (id === reqId) {
-                            console.log("Status update received:", status);
                             $('#operationStatus').text(status);
                             if (status === "Rescue In Progress" || status === "Resolved") {
-                                // Reload dashboard state to display current correct options
                                 setTimeout(function() { window.location.reload(); }, 1500);
                             }
                         }
                     });
                 }
-            });
-        </script>
-    }
+                </text>
+            }
+        });
+    </script>
 }
