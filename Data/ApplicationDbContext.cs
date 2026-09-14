@@ -16,6 +16,7 @@ namespace ResuceNet.Data
         public DbSet<EmergencyAssignment> EmergencyAssignments { get; set; }
         public DbSet<EmergencyStatusHistory> EmergencyStatusHistories { get; set; }
         public DbSet<SMSAlert> SMSAlerts { get; set; }
+        public DbSet<UserNotificationState> UserNotificationStates { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,7 @@ namespace ResuceNet.Data
             modelBuilder.Entity<EmergencyAssignment>().ToTable("EmergencyAssignments");
             modelBuilder.Entity<EmergencyStatusHistory>().ToTable("EmergencyStatusHistory");
             modelBuilder.Entity<SMSAlert>().ToTable("SMSAlerts");
+            modelBuilder.Entity<UserNotificationState>().ToTable("UserNotificationStates");
 
             // Configure decimal precision for Latitudes and Longitudes
             modelBuilder.Entity<RescueTeam>()

@@ -103,6 +103,16 @@ namespace ResuceNet.Controllers
                 return NotFound();
             }
 
+            // Security: If logged-in user is a Citizen, verify request ownership
+            if (User.IsInRole("Citizen"))
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(userIdString, out int currentCitizenId) && request.CitizenId != currentCitizenId)
+                {
+                    return Forbid();
+                }
+            }
+
             // Fetch history
             var history = await _context.EmergencyStatusHistories
                 .Where(h => h.EmergencyRequestId == id)
@@ -131,6 +141,16 @@ namespace ResuceNet.Controllers
             if (request == null)
             {
                 return NotFound();
+            }
+
+            // Security: If logged-in user is a Citizen, verify request ownership
+            if (User.IsInRole("Citizen"))
+            {
+                var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (int.TryParse(userIdString, out int currentCitizenId) && request.CitizenId != currentCitizenId)
+                {
+                    return Forbid();
+                }
             }
 
             var history = await _context.EmergencyStatusHistories

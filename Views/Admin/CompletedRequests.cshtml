@@ -112,6 +112,18 @@
                             </tbody>
                         </table>
                     </div>
+
+                    <!-- Pagination Footer -->
+                    <div class="card-footer-clean bg-light border-top px-4 py-3 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2" id="archivePaginationFooter">
+                        <div class="text-secondary fs-8" id="paginationInfo">
+                            Showing <span class="text-dark fw-bold" id="pageStart">1</span> to <span class="text-dark fw-bold" id="pageEnd">10</span> of <span class="text-dark fw-bold" id="totalRecords">@Model.Count</span> resolved cases
+                        </div>
+                        <nav aria-label="Archive table pagination">
+                            <ul class="pagination pagination-sm mb-0 gap-1" id="paginationControls">
+                                <!-- Dynamic page buttons injected via JS -->
+                            </ul>
+                        </nav>
+                    </div>
                 }
                 else
                 {
@@ -128,13 +140,132 @@
 
 @section Scripts {
     <script>
-        $(document).ready(function() {
-            $('#archiveSearch').keyup(function() {
-                var val = $(this).val().toLowerCase();
-                $('#archiveTable tbody tr').filter(function() {
-                    $(this).toggle($(this).text().toLowerCase().indexOf(val) > -1);
-                });
+        $(document).ready(function () {
+            const pageSize = 10;
+            let currentPage = 1;
+            const $allRows = $('#archiveTable tbody tr');
+            let $matchingRows = $allRows;
+
+            function updatePagination() {
+                const totalMatching = $matchingRows.length;
+                const totalPages = Math.ceil(totalMatching / pageSize) || 1;
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+                if (currentPage < 1) {
+                    currentPage = 1;
+                }
+
+                // Hide all rows first
+                $allRows.hide();
+
+                if (totalMatching === 0) {
+                    $('#archivePaginationFooter').hide();
+                    $('#noResultsRow').remove();
+                    $('#archiveTable tbody').append('<tr id="noResultsRow"><td colspan="8" class="text-center py-4 text-muted"><i class="fa-solid fa-magnifying-glass me-2"></i>No matching resolved cases found.</td></tr>');
+                    return;
+                } else {
+                    $('#noResultsRow').remove();
+                }
+
+                // Calculate slice for 10 cases per page
+                const startIndex = (currentPage - 1) * pageSize;
+                const endIndex = Math.min(startIndex + pageSize, totalMatching);
+
+                // Show only the current page rows
+                $matchingRows.slice(startIndex, endIndex).show();
+
+                // Update Info Text
+                $('#pageStart').text(startIndex + 1);
+                $('#pageEnd').text(endIndex);
+                $('#totalRecords').text(totalMatching);
+                $('#archivePaginationFooter').show();
+
+                // Render Pagination Controls
+                renderPaginationButtons(totalPages);
+            }
+
+            function renderPaginationButtons(totalPages) {
+                const $pagination = $('#paginationControls');
+                $pagination.empty();
+
+                if (totalPages <= 1) {
+                    $pagination.hide();
+                    return;
+                }
+                $pagination.show();
+
+                // Previous Button
+                const prevDisabled = currentPage === 1 ? 'disabled' : '';
+                $pagination.append(`
+                    <li class="page-item ${prevDisabled}">
+                        <button type="button" class="page-link rounded-2 px-2.5 py-1 text-dark fw-semibold" id="btnPrevPage" title="Previous Page" ${currentPage === 1 ? 'disabled' : ''}>
+                            <i class="fa-solid fa-chevron-left"></i>
+                        </button>
+                    </li>
+                `);
+
+                // Page Number Buttons
+                for (let i = 1; i <= totalPages; i++) {
+                    const isActive = i === currentPage ? 'active' : '';
+                    $pagination.append(`
+                        <li class="page-item ${isActive}">
+                            <button type="button" class="page-link rounded-2 px-3 py-1 fw-bold ${i === currentPage ? 'bg-primary text-white border-primary' : 'text-dark'}" data-page="${i}">
+                                ${i}
+                            </button>
+                        </li>
+                    `);
+                }
+
+                // Next Button
+                const nextDisabled = currentPage === totalPages ? 'disabled' : '';
+                $pagination.append(`
+                    <li class="page-item ${nextDisabled}">
+                        <button type="button" class="page-link rounded-2 px-2.5 py-1 text-dark fw-semibold" id="btnNextPage" title="Next Page" ${currentPage === totalPages ? 'disabled' : ''}>
+                            <i class="fa-solid fa-chevron-right"></i>
+                        </button>
+                    </li>
+                `);
+            }
+
+            // Click Handlers for Page Buttons
+            $(document).on('click', '#paginationControls button[data-page]', function () {
+                currentPage = parseInt($(this).data('page'));
+                updatePagination();
             });
+
+            $(document).on('click', '#btnPrevPage', function () {
+                if (currentPage > 1) {
+                    currentPage--;
+                    updatePagination();
+                }
+            });
+
+            $(document).on('click', '#btnNextPage', function () {
+                const totalPages = Math.ceil($matchingRows.length / pageSize) || 1;
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    updatePagination();
+                }
+            });
+
+            // Search input live filtering + pagination recalculation
+            $('#archiveSearch').on('input', function () {
+                const query = $(this).val().toLowerCase().trim();
+                if (!query) {
+                    $matchingRows = $allRows;
+                } else {
+                    $matchingRows = $allRows.filter(function () {
+                        return $(this).text().toLowerCase().indexOf(query) > -1;
+                    });
+                }
+                currentPage = 1;
+                updatePagination();
+            });
+
+            // Initial load
+            updatePagination();
         });
     </script>
 }

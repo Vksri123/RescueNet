@@ -14,7 +14,15 @@
                     <span class="live-indicator">Live Dispatch tracking</span>
                     <h2 class="h4 text-dark mb-0 mt-1">Request ID: #@Model.Id</h2>
                 </div>
-                <span class="badge bg-secondary">@Model.EmergencyType</span>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-secondary">@Model.EmergencyType</span>
+                    @if (User.IsInRole("Citizen"))
+                    {
+                        <a asp-controller="Citizen" asp-action="Dashboard" class="btn btn-sm btn-outline-danger">
+                            <i class="fa-solid fa-arrow-left me-1"></i> My Dashboard
+                        </a>
+                    }
+                </div>
             </div>
             
             <div class="card-body-clean">
@@ -128,24 +136,27 @@
             </div>
         </div>
 
-        <!-- System History logs -->
-        <div class="glass-card">
-            <div class="card-header-clean">
-                <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-clipboard-list text-primary me-2"></i> Operations Logs</h3>
-            </div>
-            <div class="card-body-clean" id="logList">
-                @foreach (var h in history)
-                {
-                    <div class="log-item d-flex mb-3">
-                        <div class="log-time text-muted me-3 fs-9" style="min-width: 80px;">@h.ChangedAt.ToLocalTime().ToString("HH:mm:ss")</div>
-                        <div class="log-details">
-                            <span class="badge bg-secondary me-2 fs-9">@h.Status</span>
-                            <span class="text-dark fs-8">@h.Notes</span>
+        @if (!User.IsInRole("Citizen"))
+        {
+            <!-- System History logs -->
+            <div class="glass-card">
+                <div class="card-header-clean">
+                    <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-clipboard-list text-primary me-2"></i> Operations Logs</h3>
+                </div>
+                <div class="card-body-clean" id="logList">
+                    @foreach (var h in history)
+                    {
+                        <div class="log-item d-flex mb-3">
+                            <div class="log-time text-muted me-3 fs-9" style="min-width: 80px;">@h.ChangedAt.ToLocalTime().ToString("HH:mm:ss")</div>
+                            <div class="log-details">
+                                <span class="badge bg-secondary me-2 fs-9">@h.Status</span>
+                                <span class="text-dark fs-8">@h.Notes</span>
+                            </div>
                         </div>
-                    </div>
-                }
+                    }
+                </div>
             </div>
-        </div>
+        }
     </div>
 
     <!-- Live Map Column -->

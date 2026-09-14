@@ -8,6 +8,7 @@
     <!-- Modern Typography & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
     
     <!-- Leaflet.js Mapping CSS (Loaded globally for mapping features) -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -62,17 +63,54 @@
                             else // Citizen
                             {
                                 <li class="nav-item">
+                                    <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Citizen" && ViewContext.RouteData.Values["action"]?.ToString() == "Dashboard" ? "active" : "")" asp-controller="Citizen" asp-action="Dashboard">
+                                        <i class="fa-solid fa-gauge-high me-1"></i> Citizen Dashboard
+                                    </a>
+                                </li>
+                                <li class="nav-item">
                                     <a class="nav-link @(ViewContext.RouteData.Values["controller"]?.ToString() == "Emergency" && ViewContext.RouteData.Values["action"]?.ToString() == "Create" ? "active" : "")" asp-controller="Emergency" asp-action="Create">
-                                        <i class="fa-solid fa-kit-medical me-1"></i> File Emergency
+                                        <i class="fa-solid fa-kit-medical text-danger me-1"></i> File Emergency
                                     </a>
                                 </li>
                             }
                         }
                     </ul>
                     
-                    <ul class="navbar-nav">
+                    <ul class="navbar-nav align-items-center">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
+                            var currentUserId = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value ?? "0";
+                            <!-- Emergency SMS Notification Bell Dropdown (Only shown when user is logged in) -->
+                            <li class="nav-item dropdown me-2" id="smsNotificationContainer" data-user-id="@currentUserId">
+                                <a class="nav-link position-relative text-dark d-flex align-items-center justify-content-center p-2 rounded-circle" href="#" id="smsNotificationDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false" title="Emergency SMS Notifications">
+                                    <i class="bi bi-bell fs-5"></i>
+                                    <span class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger" id="smsNotificationBadge" style="display: none; font-size: 0.65rem;">
+                                        0
+                                    </span>
+                                </a>
+                                <div class="dropdown-menu dropdown-menu-end shadow-lg border-0 rounded-3 p-0 mt-2" aria-labelledby="smsNotificationDropdown" style="width: 360px; max-width: 90vw; z-index: 1080;">
+                                    <div class="px-3 py-2.5 bg-light border-bottom d-flex justify-content-between align-items-center rounded-top-3">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <i class="bi bi-bell-fill text-danger fs-6"></i>
+                                            <span class="fw-bold text-dark fs-8">Emergency SMS Alerts</span>
+                                        </div>
+                                        <span class="badge bg-danger rounded-pill fs-9" id="smsNotificationHeaderBadge">0 Alerts</span>
+                                    </div>
+                                    <div class="p-0" style="max-height: 350px; overflow-y: auto;" id="smsNotificationItemsList">
+                                        <div class="p-4 text-center text-muted" id="smsNotificationEmptyState">
+                                            <i class="bi bi-bell-slash fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                                            <div class="fs-8 fw-medium">No SMS broadcast alerts yet</div>
+                                            <div class="fs-9 text-muted">Emergency alerts will appear here.</div>
+                                        </div>
+                                    </div>
+                                    <div class="px-3 py-2 bg-light border-top text-center rounded-bottom-3">
+                                        <small class="text-muted fs-9 d-flex align-items-center justify-content-center gap-1">
+                                            <i class="fa-solid fa-satellite-dish text-danger"></i> Live Emergency Broadcasts
+                                        </small>
+                                    </div>
+                                </div>
+                            </li>
+
                             <li class="nav-item dropdown">
                                 <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <div class="user-avatar me-2">
@@ -204,15 +242,151 @@
                 </text>
             }
 
+            // Load initial SMS Alert Notifications in Navigation Bell (only for logged-in users)
+            if ($('#smsNotificationContainer').length > 0) {
+                loadSMSAlertNotifications();
+
+                // When user opens/clicks the notification dropdown, mark as seen and immediately hide the count badge
+                $(document).on('show.bs.dropdown', '#smsNotificationContainer', function () {
+                    markSMSAlertsAsSeen();
+                });
+                $('#smsNotificationDropdown').on('click', function () {
+                    markSMSAlertsAsSeen();
+                });
+            }
+
             if (window.rescueHub) {
                 window.rescueHub.on("SMSAlertReceived", function(msg, role, timeStr) {
                     $('#globalSMSAlertMessage').text(msg);
                     $('#globalSMSAlertTime').text(timeStr || new Date().toLocaleTimeString());
                     var modal = new bootstrap.Modal(document.getElementById('globalSMSAlertModal'));
                     modal.show();
+
+                    // Instantly refresh navigation bell count and SMS items list if logged in
+                    if ($('#smsNotificationContainer').length > 0) {
+                        loadSMSAlertNotifications();
+                    }
                 });
             }
         });
+
+        var latestSMSAlertId = 0;
+
+        function getCurrentUserStorageKey() {
+            var userId = $('#smsNotificationContainer').data('user-id') || '0';
+            return 'rescuenet_sms_last_seen_user_' + userId;
+        }
+
+        function markSMSAlertsAsSeen() {
+            if (latestSMSAlertId > 0) {
+                var storageKey = getCurrentUserStorageKey();
+                localStorage.setItem(storageKey, latestSMSAlertId.toString());
+
+                // Persist seen state in DB per user via API
+                $.ajax({
+                    url: '/Home/MarkSMSAlertsAsSeen',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ lastSeenId: latestSMSAlertId })
+                });
+            }
+            $('#smsNotificationBadge').hide().text('0');
+            $('#smsNotificationItemsList .unread-indicator-dot').remove();
+        }
+
+        // Load & Render SMS Notifications for Top Navigation Bar Bell Icon
+        function loadSMSAlertNotifications() {
+            if ($('#smsNotificationContainer').length === 0) return;
+
+            $.ajax({
+                url: '/Home/GetRecentSMSAlerts',
+                type: 'GET',
+                dataType: 'json',
+                success: function (res) {
+                    if (res && res.success && Array.isArray(res.alerts)) {
+                        renderSMSAlertsList(res.alerts, res.userLastSeenId || 0);
+                    }
+                },
+                error: function (err) {
+                    console.warn('Could not load SMS notifications:', err);
+                }
+            });
+        }
+
+        function renderSMSAlertsList(alerts, serverUserLastSeenId) {
+            var $badge = $('#smsNotificationBadge');
+            var $headerBadge = $('#smsNotificationHeaderBadge');
+            var $list = $('#smsNotificationItemsList');
+
+            if (!alerts || alerts.length === 0) {
+                $badge.hide().text('0');
+                $headerBadge.text('0 Alerts');
+                $list.html(`
+                    <div class="p-4 text-center text-muted" id="smsNotificationEmptyState">
+                        <i class="bi bi-bell-slash fs-2 d-block mb-2 text-secondary opacity-50"></i>
+                        <div class="fs-8 fw-medium">No SMS broadcast alerts yet</div>
+                        <div class="fs-9 text-muted">Emergency alerts will appear here.</div>
+                    </div>
+                `);
+                return;
+            }
+
+            // Track highest alert ID
+            latestSMSAlertId = Math.max.apply(Math, alerts.map(function (a) { return a.id || 0; }));
+
+            // Read last seen ID specifically for THIS logged-in user
+            var storageKey = getCurrentUserStorageKey();
+            var localLastSeenId = parseInt(localStorage.getItem(storageKey) || '0', 10);
+            var effectiveLastSeenId = Math.max(localLastSeenId, serverUserLastSeenId || 0);
+
+            // Sync user local storage if server value is newer
+            if (effectiveLastSeenId > localLastSeenId) {
+                localStorage.setItem(storageKey, effectiveLastSeenId.toString());
+            }
+
+            // Count unseen alerts specifically for THIS user
+            var unseenAlerts = alerts.filter(function (a) { return (a.id || 0) > effectiveLastSeenId; });
+            var unseenCount = unseenAlerts.length;
+
+            if (unseenCount > 0) {
+                $badge.text(unseenCount > 99 ? '99+' : unseenCount).show();
+            } else {
+                $badge.hide().text('0');
+            }
+
+            $headerBadge.text(alerts.length + ' Alert' + (alerts.length > 1 ? 's' : ''));
+
+            var itemsHtml = '';
+            alerts.forEach(function (alert) {
+                var isUnseen = (alert.id || 0) > effectiveLastSeenId;
+                var safeMsg = $('<div>').text(alert.message || '').html();
+                var safeRole = $('<div>').text(alert.targetRole || 'All').html();
+                var timeDisplay = alert.sentAt || alert.timeAgo || 'Recent';
+                var recipientBadge = alert.recipients ? `<span class="ms-2"><i class="bi bi-phone me-1"></i>${alert.recipients} sent</span>` : '';
+                var unreadDot = isUnseen ? `<span class="badge bg-danger p-1 rounded-circle me-1 unread-indicator-dot" title="New Alert" style="width: 8px; height: 8px; display: inline-block;"></span>` : '';
+
+                itemsHtml += `
+                    <div class="px-3 py-2.5 border-bottom bg-white" style="transition: background 0.15s ease;" onmouseover="this.style.backgroundColor='#f8fafc'" onmouseout="this.style.backgroundColor='#ffffff'">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <div class="d-flex align-items-center">
+                                ${unreadDot}
+                                <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 fs-9 fw-semibold">
+                                    <i class="bi bi-broadcast me-1"></i> ${safeRole}
+                                </span>
+                            </div>
+                            <span class="text-muted fs-9">${timeDisplay}</span>
+                        </div>
+                        <div class="text-dark fs-8 fw-medium text-break" style="line-height: 1.35;">${safeMsg}</div>
+                        <div class="text-muted fs-9 mt-1 d-flex align-items-center">
+                            <span class="text-danger fw-semibold"><i class="fa-solid fa-circle-exclamation me-1"></i> Broadcast Alert</span>
+                            ${recipientBadge}
+                        </div>
+                    </div>
+                `;
+            });
+
+            $list.html(itemsHtml);
+        }
 
         // Global SweetAlert2 delete confirmation helper
         function confirmDeleteWithSwal(event, itemName) {

@@ -85,6 +85,24 @@ using (var scope = app.Services.CreateScope())
         var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
         db.Database.EnsureCreated();
 
+        // Ensure UserNotificationStates table exists for tracking per-user read/seen state
+        try
+        {
+            db.Database.ExecuteSqlRaw(@"
+                IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='UserNotificationStates' AND xtype='U')
+                BEGIN
+                    CREATE TABLE UserNotificationStates (
+                        Id INT IDENTITY(1,1) PRIMARY KEY,
+                        UserId INT NOT NULL,
+                        LastSeenSMSAlertId INT NOT NULL DEFAULT 0,
+                        LastSeenAt DATETIME2 NOT NULL DEFAULT GETUTCDATE()
+                    );
+                    CREATE INDEX IX_UserNotificationStates_UserId ON UserNotificationStates(UserId);
+                END
+            ");
+        }
+        catch { }
+
         // Seed default Admin if not present
         if (!db.Users.Any(u => u.Role == "Admin"))
         {

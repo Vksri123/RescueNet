@@ -1,0 +1,545 @@
+@model CitizenDashboardViewModel
+@{
+    ViewData["Title"] = "Citizen Emergency Dashboard";
+}
+
+<div class="fade-in">
+    <!-- Citizen Header Banner -->
+    <div class="card border-0 shadow-sm rounded-4 p-4 mb-4" style="background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(16px); border: 1px solid rgba(226, 232, 240, 0.9);">
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+            <div>
+                <div class="d-flex align-items-center gap-2 mb-1">
+                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger border-opacity-25 px-2 py-1 fs-9 text-uppercase fw-bold">
+                        <i class="fa-solid fa-user-shield me-1"></i> Citizen Emergency Portal
+                    </span>
+                    <span class="badge bg-light text-muted border px-2 py-1 fs-9">
+                        <i class="fa-solid fa-phone me-1"></i> @(string.IsNullOrEmpty(Model.Citizen.PhoneNumber) ? "Registered User" : Model.Citizen.PhoneNumber)
+                    </span>
+                </div>
+                <h1 class="h3 fw-bold text-dark mb-1" style="font-family: 'Outfit', sans-serif;">
+                    Welcome, @Model.Citizen.FullName
+                </h1>
+                <p class="text-secondary fs-8 mb-0">
+                    Track the real-time status of your emergency reports, dispatch communications, and rescue operations.
+                </p>
+            </div>
+            <div class="d-flex gap-2">
+                <a asp-controller="Emergency" asp-action="Create" class="btn btn-danger px-4 py-2 fw-semibold shadow-sm d-flex align-items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation"></i>
+                    <span>File New Emergency</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Metric KPI Cards -->
+    <div class="row g-3 mb-4">
+        <!-- Active Emergencies -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-4 border-danger">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-muted fs-8 text-uppercase fw-semibold d-block mb-1">Active Emergencies</span>
+                        <h2 class="h3 fw-bold text-danger mb-0">@Model.ActiveRequestsCount</h2>
+                    </div>
+                    <div class="portal-icon-box bg-danger bg-opacity-10 text-danger rounded-3" style="width: 44px; height: 44px;">
+                        @if (Model.ActiveRequestsCount > 0)
+                        {
+                            <i class="fa-solid fa-bell fa-lg pulse-slow"></i>
+                        }
+                        else
+                        {
+                            <i class="fa-solid fa-bell-slash fa-lg"></i>
+                        }
+                    </div>
+                </div>
+                <div class="mt-2 fs-9 text-secondary">
+                    @if (Model.ActiveRequestsCount > 0)
+                    {
+                        <span class="text-danger fw-semibold"><i class="fa-solid fa-circle-exclamation me-1"></i> Live emergency in progress</span>
+                    }
+                    else
+                    {
+                        <span class="text-success fw-semibold"><i class="fa-solid fa-circle-check me-1"></i> All quiet & safe</span>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- In-Progress / Dispatched -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-4 border-primary">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-muted fs-8 text-uppercase fw-semibold d-block mb-1">Rescue In Action</span>
+                        <h2 class="h3 fw-bold text-primary mb-0">@Model.InProgressRequestsCount</h2>
+                    </div>
+                    <div class="portal-icon-box bg-primary bg-opacity-10 text-primary rounded-3" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-truck-fast fa-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-2 fs-9 text-secondary">
+                    <span>Teams en route or at scene</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resolved Rescues -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-4 border-success">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-muted fs-8 text-uppercase fw-semibold d-block mb-1">Resolved Rescues</span>
+                        <h2 class="h3 fw-bold text-success mb-0">@Model.ResolvedRequestsCount</h2>
+                    </div>
+                    <div class="portal-icon-box bg-success bg-opacity-10 text-success rounded-3" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-shield-check fa-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-2 fs-9 text-secondary">
+                    <span>Successfully completed missions</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Total Reports Filed -->
+        <div class="col-sm-6 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 p-3 h-100 bg-white border-start border-4 border-dark">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="text-muted fs-8 text-uppercase fw-semibold d-block mb-1">Total Reports Logged</span>
+                        <h2 class="h3 fw-bold text-dark mb-0">@Model.TotalRequests</h2>
+                    </div>
+                    <div class="portal-icon-box bg-dark bg-opacity-10 text-dark rounded-3" style="width: 44px; height: 44px;">
+                        <i class="fa-solid fa-folder-open fa-lg"></i>
+                    </div>
+                </div>
+                <div class="mt-2 fs-9 text-secondary">
+                    <span>Your lifetime crisis logs</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<style>
+    .citizen-tab-container {
+        background: rgba(255, 255, 255, 0.96);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(226, 232, 240, 0.95);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        display: inline-flex;
+        padding: 5px;
+        border-radius: 50px;
+    }
+    .citizen-tab-pill {
+        background-color: #ffffff !important;
+        color: #1e293b !important;
+        border: 1px solid #cbd5e1 !important;
+        font-weight: 600;
+        transition: all 0.2s ease-in-out;
+    }
+    .citizen-tab-pill:hover {
+        background-color: #f1f5f9 !important;
+        color: #0284c7 !important;
+        border-color: #94a3b8 !important;
+    }
+    .citizen-tab-pill.active {
+        background: linear-gradient(135deg, #0284c7 0%, #0369a1 100%) !important;
+        color: #ffffff !important;
+        border-color: #0284c7 !important;
+        box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4) !important;
+    }
+    .citizen-tab-pill .tab-icon {
+        color: #0284c7;
+        transition: color 0.2s ease-in-out;
+    }
+    .citizen-tab-pill.active .tab-icon {
+        color: #ffffff !important;
+    }
+    .citizen-tab-pill .tab-badge-inactive {
+        background-color: #e2e8f0 !important;
+        color: #334155 !important;
+    }
+    .citizen-tab-pill.active .tab-badge-inactive {
+        background-color: rgba(255, 255, 255, 0.25) !important;
+        color: #ffffff !important;
+    }
+
+    /* Scrollable Resolved Incidents Table Styling */
+    .citizen-scrollable-table {
+        max-height: 420px;
+        overflow-y: auto;
+        overflow-x: auto;
+        position: relative;
+    }
+    .citizen-scrollable-table::-webkit-scrollbar {
+        width: 7px;
+        height: 7px;
+    }
+    .citizen-scrollable-table::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 6px;
+    }
+    .citizen-scrollable-table::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 6px;
+    }
+    .citizen-scrollable-table::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+    }
+    .citizen-sticky-thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        background-color: #f8fafc !important;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
+    .citizen-resolved-row {
+        transition: background-color 0.15s ease-in-out;
+    }
+    .citizen-resolved-row:hover {
+        background-color: #f8fafc !important;
+    }
+</style>
+
+    <!-- Navigation Tabs -->
+    <div class="mb-4">
+        <div class="citizen-tab-container">
+            <ul class="nav nav-pills gap-2" id="citizenTab" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link citizen-tab-pill active px-4 py-2 rounded-pill fw-bold" id="active-tab" data-bs-toggle="pill" data-bs-target="#active-emergencies" type="button" role="tab">
+                        <i class="fa-solid fa-tower-broadcast me-1.5 tab-icon"></i> Active Emergencies
+                        @if (Model.ActiveRequestsCount > 0)
+                        {
+                            <span class="badge bg-danger rounded-pill ms-2 px-2 py-1">@Model.ActiveRequestsCount</span>
+                        }
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link citizen-tab-pill px-4 py-2 rounded-pill fw-bold" id="completed-tab" data-bs-toggle="pill" data-bs-target="#completed-emergencies" type="button" role="tab">
+                        <i class="fa-solid fa-clock-rotate-left me-1.5 tab-icon"></i> Completed & Resolved
+                        <span class="badge tab-badge-inactive rounded-pill ms-2 px-2 py-1">@Model.ResolvedRequestsCount</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Tab Contents -->
+    <div class="tab-content" id="citizenTabContent">
+        <!-- Active Emergencies Tab -->
+        <div class="tab-pane fade show active" id="active-emergencies" role="tabpanel">
+            @if (!Model.ActiveRequests.Any())
+            {
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-3">
+                    <div class="portal-icon-box bg-success bg-opacity-10 text-success rounded-circle mx-auto mb-3" style="width: 72px; height: 72px;">
+                        <i class="fa-solid fa-shield-heart fa-2x"></i>
+                    </div>
+                    <h3 class="h4 fw-bold text-dark mb-1">No Active Emergencies</h3>
+                    <p class="text-secondary fs-7 mx-auto mb-4" style="max-width: 520px;">
+                        You have no ongoing crisis reports at this time. All previously logged requests have either been safely resolved or none have been filed yet.
+                    </p>
+                    <div>
+                        <a asp-controller="Emergency" asp-action="Create" class="btn btn-outline-danger px-4 py-2 fw-semibold rounded-pill">
+                            <i class="fa-solid fa-plus me-1"></i> Report an Emergency Now
+                        </a>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="row g-4">
+                    @foreach (var item in Model.ActiveRequests)
+                    {
+                        var req = item.Request;
+                        var priorityClass = req.PriorityLevel.ToLowerInvariant() switch
+                        {
+                            "critical" => "badge-critical",
+                            "high" => "badge-high",
+                            "medium" => "badge-medium",
+                            _ => "badge-low"
+                        };
+
+                        var statusBadgeClass = req.Status switch
+                        {
+                            "Rescue In Progress" => "bg-danger text-white pulse-slow",
+                            "On The Way" => "bg-primary text-white",
+                            "Rescue Team Accepted" => "bg-info text-white",
+                            "Assigned" => "bg-warning text-dark",
+                            _ => "bg-secondary text-white"
+                        };
+
+                        <div class="col-lg-6">
+                            <div class="card border-0 shadow-sm rounded-4 h-100 bg-white overflow-hidden" id="req-card-@req.Id">
+                                <div class="card-header bg-light border-bottom p-3 d-flex justify-content-between align-items-center">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge bg-dark px-2 py-1 fs-9 font-monospace">#@req.Id</span>
+                                        <h2 class="h6 fw-bold mb-0 text-dark">
+                                            @if (req.EmergencyType.Contains("Fire", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <i class="fa-solid fa-fire text-danger me-1"></i>
+                                            }
+                                            else if (req.EmergencyType.Contains("Flood", StringComparison.OrdinalIgnoreCase) || req.EmergencyType.Contains("Water", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <i class="fa-solid fa-water text-primary me-1"></i>
+                                            }
+                                            else if (req.EmergencyType.Contains("Earthquake", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                <i class="fa-solid fa-house-crack text-warning me-1"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fa-solid fa-kit-medical text-danger me-1"></i>
+                                            }
+                                            @req.EmergencyType
+                                        </h2>
+                                    </div>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="badge-priority @priorityClass">@req.PriorityLevel</span>
+                                        <span class="badge @statusBadgeClass px-3 py-1 fs-8 fw-semibold" id="req-status-@req.Id">
+                                            @req.Status
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div class="card-body p-4">
+                                    <p class="text-dark fs-7 fw-medium mb-3">
+                                        "@req.Description"
+                                    </p>
+
+                                    <!-- Incident Meta Details -->
+                                    <div class="row g-2 fs-8 text-secondary mb-3">
+                                        <div class="col-sm-6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fa-solid fa-location-dot text-danger"></i>
+                                                <span class="font-monospace">@req.Latitude.ToString("F4"), @req.Longitude.ToString("F4")</span>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6">
+                                            <div class="d-flex align-items-center gap-2">
+                                                <i class="fa-regular fa-clock text-primary"></i>
+                                                <span>@req.CreatedAt.ToString("MMM dd, yyyy &bull; hh:mm tt")</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Assigned Rescue Team Box -->
+                                    <div class="p-3 rounded-3 mb-3 @(item.Assignment != null ? "bg-primary bg-opacity-5 border border-primary border-opacity-25" : "bg-warning bg-opacity-10 border border-warning border-opacity-25")">
+                                        @if (item.Assignment?.RescueTeam != null)
+                                        {
+                                            var team = item.Assignment.RescueTeam;
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <div>
+                                                    <span class="fs-9 text-uppercase text-primary fw-bold d-block">
+                                                        <i class="fa-solid fa-people-group me-1"></i> Assigned Rescue Crew
+                                                    </span>
+                                                    <h3 class="h6 fw-bold text-dark mb-0">@team.TeamName</h3>
+                                                </div>
+                                                <div class="text-end">
+                                                    <a href="tel:@team.ContactNumber" class="btn btn-sm btn-outline-primary fw-semibold fs-9 rounded-pill">
+                                                        <i class="fa-solid fa-phone me-1"></i> @team.ContactNumber
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <div class="d-flex align-items-center gap-2 text-warning text-dark">
+                                                <span class="spinner-border spinner-border-sm text-warning" role="status"></span>
+                                                <span class="fs-8 fw-semibold">Disaster Response Unit assignment in progress...</span>
+                                            </div>
+                                        }
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(req.MediaUrl))
+                                    {
+                                        <div class="mb-3">
+                                            <a href="@req.MediaUrl" target="_blank" class="btn btn-sm btn-light border fs-8 text-secondary">
+                                                <i class="fa-solid fa-paperclip me-1"></i> View Uploaded Image/Video Evidence
+                                            </a>
+                                        </div>
+                                    }
+
+                                    <!-- Action Buttons -->
+                                    <div class="d-flex gap-2 mt-auto pt-2 border-top">
+                                        <a asp-controller="Emergency" asp-action="Track" asp-route-id="@req.Id" class="btn btn-danger flex-grow-1 py-2 fw-semibold shadow-xs d-flex align-items-center justify-content-center gap-2">
+                                            <i class="fa-solid fa-crosshairs pulse-slow"></i>
+                                            <span>Live GPS Tracker</span>
+                                        </a>
+                                        <a asp-controller="Emergency" asp-action="Details" asp-route-id="@req.Id" class="btn btn-outline-secondary px-3 py-2 fw-semibold">
+                                            <i class="fa-solid fa-circle-info me-1"></i> Details
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+        </div>
+
+        <!-- Completed Emergencies Tab -->
+        <div class="tab-pane fade" id="completed-emergencies" role="tabpanel">
+            @if (!Model.CompletedRequests.Any())
+            {
+                <div class="card border-0 shadow-sm rounded-4 p-5 text-center bg-white my-3">
+                    <div class="portal-icon-box bg-light text-muted rounded-circle mx-auto mb-3" style="width: 64px; height: 64px;">
+                        <i class="fa-solid fa-inbox fa-2x"></i>
+                    </div>
+                    <h3 class="h5 fw-bold text-dark mb-1">No Completed Requests</h3>
+                    <p class="text-secondary fs-8 mb-0">You don't have any past resolved emergencies in your archive yet.</p>
+                </div>
+            }
+            else
+            {
+                <div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white mb-4">
+                    <!-- Top Toolbar with Filter & Indicator -->
+                    <div class="p-3 bg-light border-bottom d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+                        <div class="d-flex align-items-center gap-2">
+                            <h4 class="h6 fw-bold text-dark mb-0">
+                                <i class="fa-solid fa-clock-rotate-left text-primary me-1.5"></i> Resolved Incidents History
+                            </h4>
+                            <span class="badge bg-success bg-opacity-10 text-success border border-success border-opacity-25 px-2.5 py-1 fs-9 fw-semibold">
+                                <i class="fa-solid fa-circle-check me-1"></i> @Model.CompletedRequests.Count Resolved
+                            </span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="input-group input-group-sm" style="max-width: 260px;">
+                                <span class="input-group-text bg-white border-end-0 text-muted"><i class="fa-solid fa-magnifying-glass fs-9"></i></span>
+                                <input type="text" id="citizenCompletedSearch" class="form-control border-start-0 ps-0 fs-8" placeholder="Filter by type, notes..." />
+                            </div>
+                            <span class="badge bg-secondary rounded-pill px-2.5 py-1.5 fs-9 d-none d-sm-inline-flex align-items-center" title="Scrollable list container">
+                                <i class="fa-solid fa-arrows-up-down me-1"></i> Scrollable
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Scrollable Table Body with Sticky Header -->
+                    <div class="table-responsive citizen-scrollable-table">
+                        <table class="table table-hover align-middle mb-0" id="citizenCompletedTable">
+                            <thead class="fs-8 text-uppercase text-secondary citizen-sticky-thead">
+                                <tr>
+                                    <th class="ps-4">Request</th>
+                                    <th>Type</th>
+                                    <th>Incident Description</th>
+                                    <th>Reported Date</th>
+                                    <th>Resolved By</th>
+                                    <th>Status</th>
+                                    <th class="text-end pe-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody class="fs-8">
+                                @foreach (var item in Model.CompletedRequests)
+                                {
+                                    var req = item.Request;
+                                    <tr class="citizen-resolved-row">
+                                        <td class="ps-4 font-monospace fw-bold text-dark">#@req.Id</td>
+                                        <td>
+                                            <span class="badge bg-light text-dark border">@req.EmergencyType</span>
+                                        </td>
+                                        <td>
+                                            <div class="text-truncate" style="max-width: 280px;" title="@req.Description">
+                                                @req.Description
+                                            </div>
+                                        </td>
+                                        <td class="text-muted">
+                                            @req.CreatedAt.ToString("MMM dd, yyyy")
+                                        </td>
+                                        <td>
+                                            @if (item.Assignment?.RescueTeam != null)
+                                            {
+                                                <span class="fw-semibold text-primary">
+                                                    <i class="fa-solid fa-people-group me-1"></i> @item.Assignment.RescueTeam.TeamName
+                                                </span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted">Command Grid</span>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-success text-white px-3 py-1">
+                                                <i class="fa-solid fa-circle-check me-1"></i> Resolved
+                                            </span>
+                                        </td>
+                                        <td class="text-end pe-4">
+                                            <a asp-controller="Emergency" asp-action="Track" asp-route-id="@req.Id" class="btn btn-sm btn-outline-primary px-3 rounded-pill fw-semibold">
+                                                <i class="fa-solid fa-eye me-1"></i> View Details
+                                            </a>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Footer Bar with Scroll / Record Count Information -->
+                    <div class="px-4 py-2 bg-light border-top d-flex justify-content-between align-items-center fs-9 text-muted">
+                        <span><i class="fa-solid fa-arrows-up-down text-primary me-1"></i> Scroll up and down to browse all resolved records</span>
+                        <span>Showing <strong class="text-dark" id="citizenCompletedVisibleCount">@Model.CompletedRequests.Count</strong> of @Model.CompletedRequests.Count cases</span>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <!-- SignalR Client for Real-Time Status Updates on Citizen Dashboard -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/6.0.1/signalr.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // Live Search Filter for Completed & Resolved Incidents Table
+            const completedSearch = document.getElementById("citizenCompletedSearch");
+            if (completedSearch) {
+                completedSearch.addEventListener("input", function () {
+                    const filter = this.value.toLowerCase().trim();
+                    const rows = document.querySelectorAll("#citizenCompletedTable tbody tr.citizen-resolved-row");
+                    let visibleCount = 0;
+                    rows.forEach(row => {
+                        const text = row.textContent.toLowerCase();
+                        if (text.includes(filter)) {
+                            row.style.display = "";
+                            visibleCount++;
+                        } else {
+                            row.style.display = "none";
+                        }
+                    });
+                    const countEl = document.getElementById("citizenCompletedVisibleCount");
+                    if (countEl) countEl.innerText = visibleCount;
+                });
+            }
+
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/emergencyHub")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("StatusUpdate", function (id, status, notes) {
+                const statusBadge = document.getElementById(`req-status-${id}`);
+                if (statusBadge) {
+                    statusBadge.innerText = status;
+
+                    if (typeof Swal !== 'undefined') {
+                        Swal.fire({
+                            icon: 'info',
+                            title: `Emergency #${id} Update`,
+                            html: `<strong>Status:</strong> ${status}<br/><span class="text-muted">${notes || ''}</span>`,
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 5000,
+                            timerProgressBar: true
+                        });
+                    }
+
+                    if (status === "Resolved" || status === "Completed") {
+                        setTimeout(() => location.reload(), 2000);
+                    }
+                }
+            });
+
+            connection.start().catch(err => console.error("SignalR Connection Error:", err));
+        });
+    </script>
+}

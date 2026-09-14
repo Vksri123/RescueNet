@@ -92,7 +92,7 @@ namespace ResuceNet.Controllers
             // Sign In the user
             await SignInUserAsync(user);
 
-            return RedirectToDashboard();
+            return RedirectToDashboard(user.Role);
         }
 
         [HttpGet]
@@ -126,7 +126,7 @@ namespace ResuceNet.Controllers
 
             await SignInUserAsync(user);
 
-            return RedirectToDashboard();
+            return RedirectToDashboard(user.Role);
         }
 
         [HttpPost]
@@ -172,10 +172,10 @@ namespace ResuceNet.Controllers
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
         }
 
-        private IActionResult RedirectToDashboard()
+        private IActionResult RedirectToDashboard(string? role = null)
         {
-            var role = User.FindFirst(ClaimTypes.Role)?.Value ?? 
-                       HttpContext.User.FindFirst(ClaimTypes.Role)?.Value;
+            role ??= User.FindFirst(ClaimTypes.Role)?.Value ?? 
+                     HttpContext.User.FindFirst(ClaimTypes.Role)?.Value;
 
             if (role == "Admin")
             {
@@ -185,7 +185,11 @@ namespace ResuceNet.Controllers
             {
                 return RedirectToAction("Dashboard", "RescueTeam");
             }
-            return RedirectToAction("Create", "Emergency");
+            if (role == "Citizen")
+            {
+                return RedirectToAction("Dashboard", "Citizen");
+            }
+            return RedirectToAction("Index", "Home");
         }
     }
 }

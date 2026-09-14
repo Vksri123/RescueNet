@@ -15,6 +15,9 @@
             <p class="text-secondary fs-8 mb-0 mt-1">Smart real-time crisis monitoring, priority dispatch, and field crew deployment</p>
         </div>
         <div class="d-flex gap-2 flex-wrap">
+            <button type="button" class="btn btn-danger btn-sm fw-semibold shadow-xs" data-bs-toggle="modal" data-bs-target="#smsAlertModal">
+                <i class="fa-solid fa-tower-broadcast me-1"></i> Emergency SMS Alert
+            </button>
             <a asp-controller="Admin" asp-action="RescueTeams" class="btn btn-outline-primary btn-sm fw-semibold">
                 <i class="fa-solid fa-people-group me-1"></i> Manage Rescue Teams
             </a>
@@ -127,74 +130,77 @@
     </div>
 </div>
 
-<!-- Mass Emergency SMS Broadcast Station -->
-<div class="row fade-in mb-4">
-    <div class="col-12">
-        <div class="glass-card border border-danger border-opacity-20">
-            <div class="card-header-clean bg-danger bg-opacity-10 d-flex justify-content-between align-items-center">
-                <div>
-                    <h3 class="h5 mb-0 text-dark fw-bold"><i class="fa-solid fa-tower-cell text-danger me-2"></i> Emergency Mass SMS Alert Broadcast Station</h3>
-                    <p class="text-muted fs-9 mb-0">Compose and dispatch SMS alerts directly to all registered users' mobile numbers</p>
+<!-- Emergency SMS Alert Broadcast Modal Popup -->
+<div class="modal fade" id="smsAlertModal" tabindex="-1" aria-labelledby="smsAlertModalLabel" aria-hidden="true" style="backdrop-filter: blur(8px);">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content glass-card border border-danger border-opacity-25" style="background: rgba(255, 255, 255, 0.98); color: #0f172a; box-shadow: 0 20px 50px rgba(0,0,0,0.2);">
+            <div class="modal-header bg-danger bg-opacity-10 border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center gap-2">
+                    <div class="bg-danger text-white rounded-circle p-2 d-flex align-items-center justify-content-center" style="width: 36px; height: 36px;">
+                        <i class="fa-solid fa-tower-broadcast fs-6"></i>
+                    </div>
+                    <div>
+                        <h5 class="modal-title text-dark fw-bold mb-0" id="smsAlertModalLabel">Emergency Mass SMS Alert Broadcast</h5>
+                        <p class="text-muted fs-9 mb-0">Dispatch instantaneous SMS alerts to citizen mobiles and field response teams</p>
+                    </div>
                 </div>
                 <div class="d-flex align-items-center gap-2">
-                    <button type="button" class="btn btn-sm btn-outline-dark py-1 fs-9 fw-semibold" data-bs-toggle="modal" data-bs-target="#smsGatewayModal">
-                        <i class="fa-solid fa-gear me-1"></i> Gateway Settings (@smsConfig.Provider)
+                    <button type="button" class="btn btn-outline-dark btn-sm py-1 fs-9 fw-semibold" data-bs-toggle="modal" data-bs-target="#smsGatewayModal" title="SMS Gateway Configuration">
+                        <i class="fa-solid fa-gear me-1"></i> Gateway (@smsConfig.Provider)
                     </button>
-                    <span class="badge bg-danger text-uppercase px-3 py-1 fs-9 pulse-slow"><i class="fa-solid fa-bullhorn me-1"></i> Gateway Active</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
             </div>
-            <div class="card-body-clean">
-                <form asp-controller="Admin" asp-action="SendSMSAlert" method="post">
-                    @Html.AntiForgeryToken()
-                    <div class="row g-3">
-                        <div class="col-lg-6">
-                            <label class="form-label text-dark fw-semibold fs-8">Broadcast Alert Message Text</label>
-                            <textarea name="alertMessage" rows="4" class="form-control form-control-dark" placeholder="e.g. FLASH WARNING: High water level flood threat in Riverbed area. Evacuate to higher ground immediately!" required></textarea>
-                        </div>
-                        <div class="col-lg-6 d-flex flex-column justify-content-between">
-                            <div class="row g-2 mb-2">
-                                <div class="col-md-6">
-                                    <label class="form-label text-dark fw-semibold fs-8">Target Audience Filter</label>
-                                    <select name="targetRole" class="form-select form-control-dark">
-                                        <option value="DirectOnly" selected>Direct Mobile Number Only</option>
-                                        <option value="All">All Registered Users</option>
-                                        <option value="Citizen">Citizens Only</option>
-                                        <option value="RescueTeam">Rescue Crews Only</option>
-                                    </select>
-                                </div>
-                                <div class="col-md-6">
-                                    <label class="form-label text-dark fw-semibold fs-8">Direct Mobile Number(s)</label>
-                                    <input type="text" name="customPhoneNumber" class="form-control form-control-dark" placeholder="e.g. 9876543210 (Optional)" />
-                                </div>
-                            </div>
-                            <button type="submit" class="btn btn-premium-danger w-100 py-2">
-                                <i class="fa-solid fa-paper-plane me-2"></i> Send Mass SMS Alert Now
-                            </button>
-                        </div>
+            
+            <form asp-controller="Admin" asp-action="SendSMSAlert" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body px-4 py-3">
+                    <div class="mb-3">
+                        <label class="form-label text-dark fw-semibold fs-8">Broadcast Alert Message Text <span class="text-danger">*</span></label>
+                        <textarea name="alertMessage" rows="3" class="form-control form-control-dark" placeholder="e.g. FLASH WARNING: High water level flood threat in Riverbed area. Evacuate to higher ground immediately!" required></textarea>
                     </div>
-                </form>
 
-                @if (recentSMS.Any())
-                {
-                    <hr class="border-secondary my-3" />
-                    <span class="text-muted d-block fs-9 mb-2 text-uppercase font-weight-bold">Recent SMS Broadcast Logs:</span>
-                    <div class="d-flex flex-column gap-2">
-                        @foreach (var sms in recentSMS)
-                        {
-                            <div class="p-2.5 rounded bg-light border border-light-subtle d-flex justify-content-between align-items-center">
-                                <div class="me-3" style="max-width: 80%;">
-                                    <span class="badge bg-danger fs-9 me-2">Target: @sms.TargetRole</span>
-                                    <span class="text-dark fs-8 fw-medium">"@sms.Message"</span>
-                                </div>
-                                <div class="text-end">
-                                    <span class="badge bg-success fs-9 mb-1 d-block"><i class="fa-solid fa-mobile-screen me-1"></i> Sent to @sms.RecipientCount User(s)</span>
-                                    <span class="text-muted fs-9 font-monospace">@sms.SentAt.ToLocalTime().ToString("t")</span>
-                                </div>
-                            </div>
-                        }
+                    <input type="hidden" name="targetRole" value="All" />
+                    <input type="hidden" name="customPhoneNumber" value="" />
+                    <div class="p-2.5 rounded-3 bg-danger bg-opacity-10 border border-danger border-opacity-25 d-flex align-items-center gap-2 mb-3">
+                        <i class="fa-solid fa-users text-danger fs-6"></i>
+                        <span class="fs-8 text-dark fw-medium">
+                            This emergency SMS alert will be automatically broadcasted to <strong>all registered users</strong> (Citizens and Rescue Teams).
+                        </span>
                     </div>
-                }
-            </div>
+
+                    @if (recentSMS.Any())
+                    {
+                        <div class="mt-4 pt-3 border-top">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="text-secondary fs-9 fw-bold text-uppercase">Recent Broadcast History</span>
+                                <span class="badge bg-light text-dark border fs-9">@recentSMS.Count logged</span>
+                            </div>
+                            <div class="d-flex flex-column gap-2" style="max-height: 180px; overflow-y: auto;">
+                                @foreach (var sms in recentSMS)
+                                {
+                                    <div class="p-2 rounded bg-light border border-light-subtle d-flex justify-content-between align-items-center">
+                                        <div class="me-2 text-truncate" style="max-width: 72%;">
+                                            <span class="badge bg-danger fs-9 me-1">@sms.TargetRole</span>
+                                            <span class="text-dark fs-8 fw-medium">"@sms.Message"</span>
+                                        </div>
+                                        <div class="text-end flex-shrink-0">
+                                            <span class="badge bg-success fs-9 d-block mb-0.5"><i class="fa-solid fa-mobile-screen me-1"></i> @sms.RecipientCount sent</span>
+                                            <span class="text-muted fs-9 font-monospace">@sms.SentAt.ToLocalTime().ToString("t")</span>
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer bg-light border-top px-4 py-3 d-flex justify-content-between">
+                    <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-premium-danger btn-sm px-4 fw-semibold shadow-sm">
+                        <i class="fa-solid fa-paper-plane me-1.5"></i> Send Mass SMS Alert Now
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>

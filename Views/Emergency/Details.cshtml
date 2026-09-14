@@ -62,26 +62,29 @@
             </div>
         </div>
 
-        <!-- History Log Card -->
-        <div class="glass-card">
-            <div class="card-header-clean">
-                <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i> Timeline Operations Log</h3>
-            </div>
-            <div class="card-body-clean">
-                <div class="timeline-logs">
-                    @foreach (var log in history)
-                    {
-                        <div class="d-flex mb-3 border-bottom border-secondary pb-3 border-opacity-15">
-                            <div class="text-muted fs-8 font-monospace me-3" style="min-width: 90px;">@log.ChangedAt.ToLocalTime().ToString("g")</div>
-                            <div>
-                                <span class="badge bg-secondary fs-9 me-2">@log.Status</span>
-                                <p class="mb-0 text-dark fs-8">@log.Notes</p>
+        @if (!User.IsInRole("Citizen"))
+        {
+            <!-- History Log Card -->
+            <div class="glass-card">
+                <div class="card-header-clean">
+                    <h3 class="h5 mb-0 text-dark"><i class="fa-solid fa-clock-rotate-left text-danger me-2"></i> Timeline Operations Log</h3>
+                </div>
+                <div class="card-body-clean">
+                    <div class="timeline-logs">
+                        @foreach (var log in history)
+                        {
+                            <div class="d-flex mb-3 border-bottom border-secondary pb-3 border-opacity-15">
+                                <div class="text-muted fs-8 font-monospace me-3" style="min-width: 90px;">@log.ChangedAt.ToLocalTime().ToString("g")</div>
+                                <div>
+                                    <span class="badge bg-secondary fs-9 me-2">@log.Status</span>
+                                    <p class="mb-0 text-dark fs-8">@log.Notes</p>
+                                </div>
                             </div>
-                        </div>
-                    }
+                        }
+                    </div>
                 </div>
             </div>
-        </div>
+        }
     </div>
 
     <!-- Right Column Sidebar Info -->
